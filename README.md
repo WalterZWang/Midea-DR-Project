@@ -16,6 +16,7 @@ Internal repo for the Midea Demand Response Project
 - Please do not upload data file to this folder 
 
 ## Structure
+``logistics``: logistics for this project, such as the meeting notes etc.
 
 ``model``: VRF and thermal zone models
 
