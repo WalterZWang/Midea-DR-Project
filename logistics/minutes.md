@@ -22,10 +22,10 @@
         - Fan: power with frequency 
     - Analyze the tracking error of temperature set-point
     - Improve visualization
-        - Revise color legend: think about the implication of color (red for hot, blue for cold), percentage using [sequential or diverging color](https://matplotlib.org/stable/tutorials/colors/colormaps.html), *Page 21, 22*
+        - Revise color legend: think about the implication of color (red for hot, blue for cold), percentage using [sequential or diverging color](https://matplotlib.org/stable/tutorials/colors/colormaps.html), *page 21, 22*
         - Use `axvspan` of `matplotlib` to represent the ON/OFF period, see figure 12 of [paper](https://doi.org/10.1016/j.apenergy.2022.119104), *page 22, left bottom*
         - The figure title, legend, axis title and label must be complete, clear, readable and free of abbrevation, *page 22*
-        - Use boxplot to summarize the daily variation at the same hour of the day, see figure 15 of [paper](https://doi.org/10.1016/j.apenergy.2022.119104), *Page 25*
+        - Use boxplot to summarize the daily variation at the same hour of the day, see figure 15 of [paper](https://doi.org/10.1016/j.apenergy.2022.119104), *page 25*
     - Refactor the code using **Jupyter Notebook** and upload to the github under sub-folder `model`
     - Analyze the relation of different condenser and evaporator temperatures after the system graph is available
     - Analyze other VRFs when all the above problems are solved
