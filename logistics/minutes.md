@@ -33,3 +33,21 @@
 - Weather underground data
 - Think about the model
 
+## 2022-06-20
+### Agenda
+- Literature review by Wutao
+- EDA by Mingyue
+- [Model for MPC](https://gohkust-my.sharepoint.com/:f:/r/personal/cezhewang_ust_hk/Documents/%E7%BE%8E%E7%9A%84-%E6%B8%AF%E7%A7%91%E5%A4%A7/%E4%BC%9A%E8%AE%AE/0622?csf=1&web=1&e=n9PR2F)
+
+### Progress
+|Who|Item|Description|Progress|
+|---|---|---|---|
+|Mingyue|VRF System EDA|Analyze the data of VRF|Identified power data problem|
+|Wutao|Literature review|Two VRF data mining paper by Mingyan Qian|`done`|
+
+### Next step
+- Mingyue
+    - Add take-home messages to each slides. Identify and clarify on the data problem with Midea team
+    - Think about the room level R-C model, read some paper if you have time
+- Wutao
+    - Literature review on VRF modeling methods for MPC purpose, starting from papers published by [Donghun Kim](https://scholar.google.com/citations?hl=en&user=Og5AGMMAAAAJ&view_op=list_works&sortby=pubdate)
