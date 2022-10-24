@@ -4,4 +4,4 @@ Models for VRF and thermal zones
 
 ## Structure
 
-``Midea_EDA.ipynb``:  Code for EDA of 5 VRF systems  
+``data``:  Code about retrieve data and EDA
