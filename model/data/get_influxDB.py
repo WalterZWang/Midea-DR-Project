@@ -36,7 +36,7 @@ import pandas as pd
 import numpy as np
 import utility as util
 import copy
-import influxDB_OldPort
+import influxDB_OldPort as port1
 
 #%%
 def get_table_info(host,port,username,password):
@@ -582,7 +582,7 @@ def get_influxDB_main():
     #%% format data
     data = Format_data(vrf_ids)
     VRF_data_port2 = data.get_vrf_df(df_sys, df_idr, df_odr)
-    VRF_data_port1 = influxDB_OldPort.port1_main(start_time2,end_time2, vrf_ids, sys_cos, idr_cos, odr_cos)
+    VRF_data_port1 = port1.port1_main(start_time2,end_time2, vrf_ids, sys_cos, idr_cos, odr_cos)
     VRF_data = data.combine_port(VRF_data_port1, VRF_data_port2)
 
     VRF_data, blg_meter_data, weather_data,\
@@ -598,5 +598,5 @@ def get_influxDB_main():
     VRF_rsp, blg_meter_rsp, weather_rsp, PV_meter_rsp, PV_dev_rsp,\
         battery_meter_rsp, battery_dev_rsp, PV_meter, PV_dev = data.resample_min_interval()
     
-    return VRF_rsp, blg_meter_rsp, weather_rsp, PV_meter_rsp, PV_dev_rsp,\
+    return data,VRF_rsp, blg_meter_rsp, weather_rsp, PV_meter_rsp, PV_dev_rsp,\
             battery_meter_rsp, battery_dev_rsp, PV_meter, PV_dev
