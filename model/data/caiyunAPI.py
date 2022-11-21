@@ -93,7 +93,7 @@ def to_dataframe(content):
     df_excel = all_df.copy()
     df_excel['datetime'] = df_excel['datetime'].map(lambda x: x.replace(tzinfo=None))
     df_excel.set_index('datetime', inplace = True)
-    df_excel.to_excel(r'D:\code_hub\caiyunAPI\database\Wforecast_'+str(df_excel.index[0].date()) + '_' +str(df_excel.index[0].hour) +'.xlsx')
+    df_excel.to_excel(str(df_excel.index[0].date()) + '_' +str(df_excel.index[0].hour) +'.xlsx')
     return all_df
 
 if __name__ == "__main__":
