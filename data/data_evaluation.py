@@ -198,8 +198,6 @@ def cal_missing_rate2(data_process, time_window):
 
         return
 
-
-
 # get data from infuxDB
 data,VRF_rsp, blg_meter_rsp, weather_rsp, PV_meter_rsp, PV_dev_rsp,\
             battery_meter_rsp, battery_dev_rsp, PV_meter, PV_dev = get_influxDB.get_influxDB_main()

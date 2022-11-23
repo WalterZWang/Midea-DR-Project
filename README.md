@@ -20,6 +20,8 @@ Internal repo for the Midea Demand Response Project
 
 ``model``: VRF and thermal zone models
 
+``data``: data collection, pre-processing, and evaluation
+
 ``src``: code for deployment
 
 ``unittests``: code for unit testing
