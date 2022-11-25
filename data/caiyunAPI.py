@@ -99,4 +99,7 @@ def to_dataframe(content):
 if __name__ == "__main__":
     content = get_data()
     all_df = to_dataframe(content)
+
+    #TODO: Write to influxdb
+    
     

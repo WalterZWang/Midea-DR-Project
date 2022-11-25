@@ -426,7 +426,7 @@ def get_influxDB_main():
             ,'vrf_0000CC311178CCM2625204100009J8UW'
            ]
     sys_cos = ['nid'
-                , 'systemQc', 'systemQh'
+               , 'systemQc', 'systemQh'
                , 'outdoor0Meter', 'outdoor0Power'
                , 'outdoor1Meter', 'outdoor1Power'
                ,'outdoor2Meter', 'outdoor2Power'

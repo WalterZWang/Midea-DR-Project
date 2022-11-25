@@ -321,9 +321,21 @@ class PVModel():
         self.y_train = PV_data.y_train
         self.y_test = PV_data.y_test
         self.external_hyper_para = external_hyper_para
-        self.one_day_pv_predict()
-        
-    def one_day_pv_predict(self):
+        self.one_day_pv_predict(method='heuristic')
+
+    def one_day_pv_predict(self, method):
+        if method == 'heuristic':
+            self.one_day_pv_predict_heuristic()
+        elif method == 'lgb':
+            self.one_day_pv_predict_lgb()
+
+    #TODO: implement heuristic prediction
+    def one_day_pv_predict_heuristic(self):
+
+
+        return None, self.y_pred, self.valid_cv_rmse
+
+    def one_day_pv_predict_lgb(self):
         for y_co in self.predict_cos:
             if self.external_hyper_para == None:
                 params = {
