@@ -12,6 +12,13 @@ Internal repo for the Midea Demand Response Project
 
 - Well structure your code into relevant folders, you can create new folders, but you need to add and explain it in [Repository structure](#structure)
 - Good documentation is required, not only for your teammates but also for yourself
+- Please follow the following steps to facilitate extensible collaboration
+    1. Create a new issue, give it a number and a brief introduction in the name, e.g. `#1_pv_prediction_heuristic`
+    2. Create a new branch, name it the same as the issue
+    3. Switch to and work on the new branch you created
+    4. Add, commit, push your new branch to the github (cloud)
+    5. create a pull request to merge your branch with the master branch
+    - To learn more about the Branch-Based Workflow, please read [here](https://merely-useful.tech/py-rse/git-advanced.html#git-advanced-branch-what)
 - Test your code before you push it to this repo. Why both and how? See the Test-Driven Development (TDD) and unit test session in [Code Development](#code-development)
 - Please do not upload data file to this folder 
 
