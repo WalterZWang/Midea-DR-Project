@@ -198,21 +198,40 @@ def cal_missing_rate2(data_process, time_window):
 
         return
 
-# get data from infuxDB
-data,VRF_rsp, blg_meter_rsp, weather_rsp, PV_meter_rsp, PV_dev_rsp,\
-            battery_meter_rsp, battery_dev_rsp, PV_meter, PV_dev = get_influxDB.get_influxDB_main()
-print('data acquired')
-# save data
-file = open('data.pkl','wb')  
-pickle.dump(data, file)  
-file.close() 
-print('data saved')
 
-# # load data
-# file = open('data.pkl','rb')  
-# data = pickle.load(file)  
-# file.close()  
-# print('data loaded')
+# information to be used
+kw = {'vrf_id': 'VRF_1K0V',
+        'idr_data': ['roomTemp', 'onOff'],
+        'odr_data': ['t4Temp', 'powerNeed'],
+        'sys_data': ['systemQc'],
+        'blg_devSn_id': ['mDev_EMeter_F2_Backup', 'VRF_1K0V'],
+        'weather_data': ['e3', 'e11']
+}
+missing_rate = {'vrf_id': 'VRF_1K0V',
+        'idr_data': {'roomTemp': [], 'onOff': []},
+        'odr_data': {'t4Temp': [], 'powerNeed': []},
+        'sys_data': {'systemQc': []},
+        'blg_devSn_id': {'mDev_EMeter_F2_Backup': [], 'VRF_1K0V': []},
+        'weather_data': {'e3': [], 'e11': []}
+}
+
+
+# # get data from infuxDB
+# data,VRF_rsp, blg_meter_rsp, weather_rsp, PV_meter_rsp, PV_dev_rsp,\
+#             battery_meter_rsp, battery_dev_rsp, PV_meter, PV_dev = get_influxDB.get_influxDB_main()
+# print('data acquired')
+
+# # save data
+# file = open('data.pkl','wb')  
+# pickle.dump(data, file)  
+# file.close() 
+# print('data saved')
+
+# load data
+file = open(r'C:\Users\Wang\Desktop\data.pkl','rb')  
+data = pickle.load(file)  
+file.close()  
+print('data loaded')
 
 # data_process与data内部属性命名不一致
 # dp.DataProcess(data)内是对data的浅拷贝，process后data的子对象也被更改，所以不能修改后一起绘图
@@ -222,7 +241,11 @@ for time_window in range(1, 8, 2):
 
 # dp.DataProcess中修改了使用的utility.py的函数：util.outlier_meter --> util.outlier
 # util.outlier修改了箱线图的分位点参数quantile
-data_process = dp.DataProcess(data)
-for time_window in range(1, 8, 2):
-        cal_missing_rate2(data_process, time_window)
-        print(f'Missing Rate (Per {time_window} day)(process)')
+# data_process = dp.DataProcess(data)
+# for time_window in range(1, 8, 2):
+#         cal_missing_rate2(data_process, time_window)
+#         print(f'Missing Rate (Per {time_window} day)(process)')
+
+
+
+# print(data.VRF_rsp['VRF_1K0V']['idu_0'].loc['2022-11-02 00:00:00+08:00':'2022-11-03 00:00:00+08:00']['roomTemp'])
