@@ -21,8 +21,7 @@ import data_processing as dp
 import get_influxDB
 
 plt.style.use('seaborn-deep')
-mpl.rcParams['font.sans-serif'] = ['SimSun']     # 显示中文, {'SimHei', 'FangSong', 'SimSun'}
-mpl.rcParams['axes.unicode_minus'] = False       # 显示负号
+mpl.rcParams['axes.unicode_minus'] = False
 mpl.rcParams['font.size'] = 8
 
 
@@ -218,7 +217,6 @@ def cal_missing_rate2(data, time_window, eval, para):
 # data,VRF_rsp, blg_meter_rsp, weather_rsp, PV_meter_rsp, PV_dev_rsp,\
 #             battery_meter_rsp, battery_dev_rsp, PV_meter, PV_dev = get_influxDB.get_influxDB_main()
 # print('data acquired')
-
 # # save data
 # file = open('data.pkl','wb')  
 # pickle.dump(data, file)  
@@ -245,10 +243,10 @@ para = {
     'rsp_num': 4  # rsp = '15T' --> rsp_num = 4 times per hour
 }
 
+# evaluate missing rate of data and save results
 for time_window in range(1, 8, 2):
     cal_missing_rate1(data, time_window, eval, para)
     print(f'Missing Rate (Per {time_window} day)')
-
 data_process = dp.DataProcess(data)
 for time_window in range(1, 8, 2):
     cal_missing_rate2(data_process, time_window, eval, para)
