@@ -255,5 +255,4 @@ if __name__ == '__main__':
     """
     main function
     """
-    # create_table()
     main()
