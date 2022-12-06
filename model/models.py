@@ -18,7 +18,11 @@ from sklearn.metrics import explained_variance_score, mean_absolute_error as MAE
 import matplotlib.pyplot as plt
 from sklearn.linear_model import LinearRegression
 import lightgbm as lgb
-
+from datetime import datetime,timedelta
+from data.Influxdb_API.Influxdb_API import ClientInfluxdb
+from datetime import datetime
+pd.options.mode.chained_assignment = None  # default='warn'
+from sklearn.metrics import  mean_squared_error
 #%% models
 class VRFModel():
     def __init__(self
@@ -445,6 +449,120 @@ class PVModel():
         #     plt.title('{} valid cv_rmse: {}'.format(y_co,valid_cv_rmse.round(3)))
         #     plt.show()
 
+
+
+class MELsModel:
+    def __init__(self,MELs_data=None,external_hyper_para=None):
+        pass
+
+    def one_day_MELs_predict(self, method: str, timeStamp: datetime = None,validate: bool = False,):
+        # if validate=True, means we want to validate the model
+        if timeStamp:
+            self.t = timeStamp
+        if method == 'heuristic':
+            return self.one_day_MELs_predict_heuristic(validate)
+        elif method == 'lgb':
+            return self.one_day_MELs_predict_lgb()
+
+
+    def one_day_MELs_predict_heuristic(self, validate: bool):
+
+        t_idx = pd.date_range(self.t + timedelta(hours=1), self.t + timedelta(hours=24), freq='1H')
+
+        if validate:
+
+            start_time = self.t + timedelta(minutes=59) - timedelta(weeks=8)
+            end_time =  self.t+timedelta(hours=24,minutes=59)
+            df_toal = self.__data_collect(start_time, end_time)
+
+            start_time_val = self.t+timedelta(hours=1)
+
+            df_X=df_toal[df_toal.index < start_time_val]
+            df_Y = df_toal[df_toal.index >= start_time_val]
+
+            s_X = self.__delete_outliers(df_X.E)
+            s_interpolate_X = self.__resample_and_interpolate(s_X)
+            y_pred= self.__diff_and_average_by_hours(s_interpolate_X, t_idx)
+
+            df_Y.replace(0, np.nan, inplace=True)
+            df_Y.dropna(inplace=True)
+            s_interpolate_Y = self.__resample_and_interpolate(df_Y.E)
+            y_true = self.__diff_and_average_by_hours(s_interpolate_Y , t_idx)
+            # print(y_true)
+            y_pred_df = pd.DataFrame(y_pred, columns=['E_diff'], index=t_idx)
+
+            square_error=self.__get_square_error(y_true,y_pred)
+
+            return y_pred_df,square_error
+
+        else:
+            start_time = self.t + timedelta(minutes=59) - timedelta(weeks=8)
+            end_time = self.t + timedelta(minutes=59)
+
+            df = self.__data_collect(start_time, end_time)
+            s = self.__delete_outliers(df.E)
+            s_interpolate = self.__resample_and_interpolate(s)
+
+            y_pred = self.__diff_and_average_by_hours(s_interpolate, t_idx)
+            y_pred_df = pd.DataFrame(y_pred, columns=['E_diff'], index=t_idx)
+            return y_pred_df
+
+    def one_day_MELs_predict_lgb(self):
+        pass
+
+    def __data_collect(self,start_time:datetime,end_time:datetime)->pd.DataFrame:
+        db_name = 'moserveribms'
+        params = {
+            'measurement_name': 'ibmsV2modata',
+            'start_time': start_time,
+            'end_time': end_time,
+            'field_list': ['E'],
+            'tag_dict': {'nid': 'ibmsv2/ibmsv2_5929149262402256896/EMeter/mDev_EMeter_F2_Backup'},
+            'fore': False,
+            'fore_horizon': None,
+            'interval': None
+        }
+        db_client = ClientInfluxdb(db_name=db_name)
+        df = db_client.read_influxdb(**params)
+        df.E = df.E.astype('float64')  # convert string to float
+        return df
+
+    def __delete_outliers(self, s:pd.Series,k:float=1.5)->pd.Series:
+        Q1 = np.percentile(s, 25, interpolation='midpoint')
+        Q3 = np.percentile(s, 75, interpolation='midpoint')
+        IQR = Q3 - Q1
+        # Upper bound
+        upper = Q3 + k * IQR
+        # Lower bound
+        lower = Q1 - k * IQR
+
+        s.drop(s[s >= upper].index, inplace=True)
+        s.drop(s[s <= lower].index, inplace=True)
+
+        return s
+
+    def __resample_and_interpolate(self,s:pd.Series)->pd.Series:
+        s_resample=s.resample(rule='1H').mean()
+
+        s_interpolated = s_resample.interpolate()
+
+        return s_interpolated
+
+    def __diff_and_average_by_hours(self, s, t_inx) -> list:
+        s_diff = s.diff()
+
+        mean_y = [round(s_diff[s_diff.index.hour == i].mean(), 3) for i in range(24)]
+        res = []
+        for t in t_inx:
+            res.append(mean_y[t.hour])
+
+        # print(res)
+        return res
+
+    def __get_square_error(self,y_true:list,y_pred:list):
+        square_error = np.nanmean((np.array(y_true) - np.array(y_pred)) ** 2)
+
+        return square_error
 
 
 

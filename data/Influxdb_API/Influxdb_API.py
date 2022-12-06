@@ -5,9 +5,13 @@ from influxdb import InfluxDBClient,DataFrameClient
 import pandas as pd
 from datetime import datetime
 
-from utils.influxdb_util import utc2local,local2utc,get_field_list,fore_data_preprocessing,resultset_to_df,\
-    fore_data_preprocessing_read
 
+try:
+    from .utils.influxdb_util import utc2local, local2utc, get_field_list, fore_data_preprocessing, resultset_to_df, \
+        fore_data_preprocessing_read
+except:
+    from utils.influxdb_util import utc2local, local2utc, get_field_list, fore_data_preprocessing, resultset_to_df, \
+        fore_data_preprocessing_read
 # import configparser
 
 # config = configparser.ConfigParser()
@@ -92,6 +96,8 @@ class ClientInfluxdb(object):
                         (field_string, measurement_name, utc_start_time, utc_end_time,tag_string)
 
         data = self.dataframeclient.query(query_str)
+
+        assert data, f"data does not exit between {start_time} and {end_time}"
 
         result_df=data[measurement_name]
         result_df.index=result_df.index.map(lambda x: utc2local(x))
