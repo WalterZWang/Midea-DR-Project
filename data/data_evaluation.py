@@ -168,12 +168,14 @@ def linear_imputation_df(data_frame, imputation_time_delta, sampling_time_delta)
     '''
     Linear interpolation of a data_frame
 
-    data_frame: ata that belongs to the "data_frame" format.
+    data_frame: data that belongs to the "data_frame" format.
     imputation_time_delta: data loss for more than consecutive imputation_time_delta will not be interpolated.
     sampling_time_delta: sampling interval (15min).
     '''
 
     for col in data_frame.columns:
+        # 不对启停数据进行插值
+        if col == 'onOff': continue
         series = data_frame[col]
 
         # 获取空值索引
