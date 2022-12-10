@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 '''
-@File    :   data_evaluation.py
+@File    :   data_evaluation_old.py
 @Time    :   2022/11/23 12:57:53
 @Author  :   Zhenyu Wang 
 '''
@@ -228,51 +228,52 @@ def polynomial_imputation(data, eval, param):
     return data_new
 
 
+if __name__ == '__main__':
+    
+    # # get data from ''get_infuxDB.py''
+    # data,VRF_rsp, blg_meter_rsp, weather_rsp, PV_meter_rsp, PV_dev_rsp,\
+    #             battery_meter_rsp, battery_dev_rsp, PV_meter, PV_dev = get_influxDB.get_influxDB_main()
+    # print('data acquired')
+    # # save data
+    # file = open('data.pkl','wb')  
+    # pickle.dump(data, file)  
+    # file.close() 
+    # print('data saved')
 
-# # get data from ''get_infuxDB.py''
-# data,VRF_rsp, blg_meter_rsp, weather_rsp, PV_meter_rsp, PV_dev_rsp,\
-#             battery_meter_rsp, battery_dev_rsp, PV_meter, PV_dev = get_influxDB.get_influxDB_main()
-# print('data acquired')
-# # save data
-# file = open('data.pkl','wb')  
-# pickle.dump(data, file)  
-# file.close() 
-# print('data saved')
+    # or load local data
+    file = open(r'C:\Users\ADMIN\Desktop\data.pkl','rb')  
+    data = pickle.load(file)  
+    file.close()  
+    print('local data loaded')
 
-# or load local data
-file = open(r'C:\Users\ADMIN\Desktop\data.pkl','rb')  
-data = pickle.load(file)  
-file.close()  
-print('local data loaded')
-
-# set information to be evaluated and other parameters
-eval = {'vrf_id': 'VRF_1K0V',
-        'idr_data': ['roomTemp', 'onOff'],
-        'odr_data': ['t4Temp', 'powerNeed'],
-        'sys_data': ['systemQc'],
-        'blg_devSn_id': ['mDev_EMeter_F2_Backup', 'VRF_1K0V'],
-        'weather_data': ['e3', 'e11']
-}
-param = {
-    'start_time': pd.to_datetime('2022-05-01 00:00:00+08:00'),
-    'end_time': pd.to_datetime('2022-11-23 00:00:00+08:00'),
-    'rsp_num': 4,  # rsp = '15T' --> rsp_num = 4 times per hour
-    'rsp_time': pd.Timedelta('15 minutes'),
-    'imputation_time_delta': pd.Timedelta('6 hours')
-}
+    # set information to be evaluated and other parameters
+    eval = {'vrf_id': 'VRF_1K0V',
+            'idr_data': ['roomTemp', 'onOff'],
+            'odr_data': ['t4Temp', 'powerNeed'],
+            'sys_data': ['systemQc'],
+            'blg_devSn_id': ['mDev_EMeter_F2_Backup', 'VRF_1K0V'],
+            'weather_data': ['e3', 'e11']
+    }
+    param = {
+        'start_time': pd.to_datetime('2022-05-01 00:00:00+08:00'),
+        'end_time': pd.to_datetime('2022-11-23 00:00:00+08:00'),
+        'rsp_num': 4,  # rsp = '15T' --> rsp_num = 4 times per hour
+        'rsp_time': pd.Timedelta('15 minutes'),
+        'imputation_time_delta': pd.Timedelta('6 hours')
+    }
 
 
-# evaluate missing rate of data and save results
-for time_window in range(1, 8, 2):
-    missing_rate, date = cal_missing_rate(data, time_window, eval, param)
-    plot_missing_rate(missing_rate, date, time_window, mark='origin')
+    # evaluate missing rate of data and save results
+    for time_window in range(1, 8, 2):
+        missing_rate, date = cal_missing_rate(data, time_window, eval, param)
+        plot_missing_rate(missing_rate, date, time_window, mark='origin')
 
-data_process = remove_outliers(data, eval)
-for time_window in range(1, 8, 2):
-    missing_rate, date = cal_missing_rate(data_process, time_window, eval, param)
-    plot_missing_rate(missing_rate, date, time_window, mark='remove_outliers')
+    data_process = remove_outliers(data, eval)
+    for time_window in range(1, 8, 2):
+        missing_rate, date = cal_missing_rate(data_process, time_window, eval, param)
+        plot_missing_rate(missing_rate, date, time_window, mark='remove_outliers')
 
-data_new = polynomial_imputation(data_process, eval, param)
-for time_window in range(1, 8, 2):
-    missing_rate, date = cal_missing_rate(data_new, time_window, eval, param)
-    plot_missing_rate(missing_rate, date, time_window, mark='polynomial_imputation')
+    data_new = polynomial_imputation(data_process, eval, param)
+    for time_window in range(1, 8, 2):
+        missing_rate, date = cal_missing_rate(data_new, time_window, eval, param)
+        plot_missing_rate(missing_rate, date, time_window, mark='polynomial_imputation')
