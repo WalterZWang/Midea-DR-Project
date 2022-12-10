@@ -37,6 +37,7 @@ def cal_missing_rate(data_frame, step):
         missing_rate[col] = 1 - (data_frame[col].rolling(step, min_periods=0).count() / float(step))
     describe = missing_rate.describe()
     
+    # 分别获得每一个传感数据的最优最近时刻
     for col in data_frame.columns:
         print(f'{col} minimal missing rate: ', describe.loc['min', col])
         print(f'{col} average missing rate: ', describe.loc['mean', col])
@@ -46,7 +47,16 @@ def cal_missing_rate(data_frame, step):
         # 获得离最新时刻最近的具有最小missing_rate的时刻
         best = missing_rate[col].iloc[idxmin[0]].tail(1)
         best_time = best.index.strftime('%Y-%m-%d %H:%M:00')
-        print(f'{col} the closest optimal moment to the present: ', best_time[0])
+        print(f'{col} the closest optimal moment to the present: ', best_time[0], '\n')
+
+    # 获得多个传感数据同时满足筛选条件的最近时刻
+    if len(data_frame.columns) > 1:
+        # 获取同一时刻所有数据的missing_rate小于20%的所有索引
+        idx_20 = missing_rate[missing_rate <= 0.2]
+        idx_20 = idx_20.dropna()
+        # 所有数据满足3天缺失率低于20%的最近时刻
+        closest_time = idx_20.tail(1).index.strftime('%Y-%m-%d %H:%M:00')
+        print('The closest moment meets the condition(< 20% missing rate) for multivariables: ', closest_time[0], '\n')
 
     return missing_rate
 
@@ -96,9 +106,9 @@ def remove_outliers(data_frame):
     # 删除小于0的值
     data_frame[data_frame < 0]  = np.nan
     # 利用箱线图去除离群值, 会把不是异常值的判定为异常值
-    Dcos = data_frame.quantile(0.98) - data_frame.quantile(0.02)
-    L = data_frame.quantile(0.02) - 1.5 * Dcos
-    U = data_frame.quantile(0.98) + 1.5 * Dcos
+    Dcos = data_frame.quantile(0.95) - data_frame.quantile(0.05)
+    L = data_frame.quantile(0.05) - 1.5 * Dcos
+    U = data_frame.quantile(0.95) + 1.5 * Dcos
     data_frame[data_frame < L] = np.nan
     data_frame[data_frame > U] = np.nan
 
