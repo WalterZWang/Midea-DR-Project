@@ -22,43 +22,122 @@ import copy
 # mpl.rcParams['axes.unicode_minus'] = False
 # mpl.rcParams['font.size'] = 8
 
-def resampling(data_frame, rsp_time='15min'):
-    df_rsp = copy.deepcopy(data_frame)
+
+def resampling(df: pd.DataFrame, rsp_time: str='15min', **kw) -> pd.DataFrame:
+    df_rsp = copy.deepcopy(df)
     return df_rsp.resample(rsp_time).mean()
 
-def cal_missing_rate(data_frame, step):
+def cal_missing_rate(df: pd.DataFrame, step: int, ms_thresh: float, **kw) -> pd.DataFrame:
     '''
     Calculates the missing rate of a data_frame
-
     '''
 
-    missing_rate = pd.DataFrame(data=None, index=data_frame.index, columns=data_frame.columns)
-    for col in data_frame.columns:
-        missing_rate[col] = 1 - (data_frame[col].rolling(step, min_periods=0).count() / float(step))
+    missing_rate = pd.DataFrame(data=None, index=df.index, columns=df.columns)
+    for col in df.columns:
+        missing_rate[col] = 1 - (df[col].rolling(step, min_periods=0).count() / float(step))
     describe = missing_rate.describe()
     
-    # 分别获得每一个传感数据的最优最近时刻
-    for col in data_frame.columns:
+    for col in df.columns:
         print(f'{col} minimal missing rate: ', describe.loc['min', col])
         print(f'{col} average missing rate: ', describe.loc['mean', col])
 
-        # 获取具有最小missing_rate的时刻的所有索引
+        # 获取具有最小missing_rate时刻的所有索引
         idxmin = np.where(missing_rate[col] == missing_rate[col].min())
-        # 获得离最新时刻最近的具有最小missing_rate的时刻
+        # 获得最近的具有最小missing_rate的时刻
         best = missing_rate[col].iloc[idxmin[0]].tail(1)
         best_time = best.index.strftime('%Y-%m-%d %H:%M:00')
-        print(f'{col} the closest optimal moment to the present: ', best_time[0], '\n')
+        print(f'{col} the closest optimal moment to the present: ', best_time[0], '\n------------------')
 
-    # 获得多个传感数据同时满足筛选条件的最近时刻
-    if len(data_frame.columns) > 1:
-        # 获取同一时刻所有数据的missing_rate小于20%的所有索引
-        idx_20 = missing_rate[missing_rate <= 0.2]
-        idx_20 = idx_20.dropna()
-        # 所有数据满足3天缺失率低于20%的最近时刻
-        closest_time = idx_20.tail(1).index.strftime('%Y-%m-%d %H:%M:00')
-        print('The closest moment meets the condition(< 20% missing rate) for multivariables: ', closest_time[0], '\n')
+    # 当dataframe有多组数据时
+    if len(df.columns) > 1:
+        # 获取每一行数据的missing_rate都小于20%的所有索引
+        idx_thresh = missing_rate[missing_rate <= ms_thresh]
+        idx_thresh = idx_thresh.dropna()
+        # 所有数据满足距离当前时间段最近的3天缺失率低于20%的时刻
+        closest_time = idx_thresh.tail(1).index.strftime('%Y-%m-%d %H:%M:00')
+        print(f'The closest moment meets the condition(< {ms_thresh}) for multivariables: ', closest_time[0], '\n------------------\n\n')
 
     return missing_rate
+
+def remove_outliers(df: pd.DataFrame, window: int, **kw) -> pd.DataFrame:
+    '''remove outliers in a data_frame'''
+
+    Q1 = df.rolling(window, center=True, min_periods=1).quantile(0.25)
+    Q3 = df.rolling(window, center=True, min_periods=1).quantile(0.75)
+    IQR = Q3 - Q1
+    min = Q1 - 2*IQR
+    max = Q3 + 2*IQR
+
+    for i in range(df.shape[0]):
+        for j in range(df.shape[1]):
+            if df.iat[i, j] < min.iat[i, j] or df.iat[i, j] > max.iat[i, j]:
+                df.iat[i, j] = np.nan
+
+    # Q1 = df.quantile(0.25)
+    # Q3 = df.quantile(0.75)
+    # print(Q1, Q3)
+    # IQR = Q3 - Q1
+    # min = Q1 - 2*IQR
+    # max = Q3 + 2*IQR
+    # df[df<min] = np.nan
+    # df[df>max] = np.nan
+
+    # for col in df.columns:
+    #     Q1 = df[col].quantile(0.25)
+    #     Q3 = df[col].quantile(0.75)
+    #     print(Q1, Q3)
+    #     IQR = Q3 - Q1
+    #     min = Q1 - 2*IQR
+    #     max = Q3 + 2*IQR
+    #     df[col][df[col]<min] = np.nan
+    #     df[col][df[col]>max] = np.nan
+
+    return df
+
+def linear_imputation(df: pd.DataFrame, imputation_time_delta: pd.Timedelta, rsp_time: pd.Timedelta, **kw) -> pd.DataFrame:
+    '''
+    Linear interpolation of a data_frame
+
+    df: data that belongs to the "data_frame" format.
+    imputation_time_delta: data loss for more than consecutive imputation_time_delta will not be interpolated.
+    sampling_time_delta: sampling interval.
+    '''
+
+    for col in df.columns:
+        # 不对启停(0,1)数据进行插值
+        if col in ['onOff', 'exv1Opening']: continue
+        series = df[col]
+
+        # 获取空值索引
+        series_nan = series[series.isna()]
+        series_nan_index = series_nan.index
+        if series_nan_index.empty: continue
+        
+        # 获取小于imputation_time_delta的空值索引
+        series_imputation_list = []
+        start = series_nan_index[0]
+        temp = series_nan_index[0]
+        end = series_nan_index[0]
+        for i in range(len(series_nan_index)-1):
+            end = series_nan_index[i+1]
+            if (end-temp) == rsp_time:
+                temp = end
+            else:
+                if ((temp - start) <= imputation_time_delta) and (start!=series.head(1).index and end!=series.tail(1).index):
+                    series_imputation_list.append([start, temp])
+                start = end
+                temp = end
+        if ((temp - start) <= imputation_time_delta) and (start!=series.head(1).index and end!=series.tail(1).index):
+            series_imputation_list.append([start, temp])
+
+        # 对满足imputation_time_delta的空值进行线性插值
+        for imputation in series_imputation_list:
+            df[col].loc[imputation[0]-rsp_time: imputation[1]+rsp_time] = \
+                series.loc[imputation[0]-rsp_time: imputation[1]+rsp_time].interpolate(method='polynomial', order=1)
+        
+    return df
+
+
 
 def cal_missing_rate_old(data_frame, time_window, params):
     '''
@@ -99,63 +178,5 @@ def plot_missing_rate(missing_rate, params, params_process, mark):
 
     print(id + f' Missing Rate ({step} steps forward) ' + mark)
     return
-
-def remove_outliers(data_frame):
-    '''remove outliers in a data_frame'''
-
-    # 删除小于0的值
-    data_frame[data_frame < 0]  = np.nan
-    # 利用箱线图去除离群值, 会把不是异常值的判定为异常值
-    Dcos = data_frame.quantile(0.95) - data_frame.quantile(0.05)
-    L = data_frame.quantile(0.05) - 1.5 * Dcos
-    U = data_frame.quantile(0.95) + 1.5 * Dcos
-    data_frame[data_frame < L] = np.nan
-    data_frame[data_frame > U] = np.nan
-
-    return data_frame
-
-def linear_imputation(data_frame, imputation_time_delta, sampling_time_delta):
-    '''
-    Linear interpolation of a data_frame
-
-    data_frame: data that belongs to the "data_frame" format.
-    imputation_time_delta: data loss for more than consecutive imputation_time_delta will not be interpolated.
-    sampling_time_delta: sampling interval (15min).
-    '''
-
-    for col in data_frame.columns:
-        # 不对启停数据进行插值
-        if col == 'onOff': continue
-        series = data_frame[col]
-
-        # 获取空值索引
-        series_nan = series[series.isna()]
-        series_nan_index = series_nan.index
-        if series_nan_index.empty: continue
-        
-        # 获取小于imputation_time_delta的空值索引
-        col_imputation_list = []
-        start = series_nan_index[0]
-        temp = series_nan_index[0]
-        end = series_nan_index[0]
-        for i in range(len(series_nan_index)-1):
-            end = series_nan_index[i+1]
-            if (end-temp) == sampling_time_delta:
-                temp = end
-            else:
-                if (temp - start) <= imputation_time_delta and (start!=series.head(1).index and end!=series.tail(1).index):
-                    col_imputation_list.append([start, temp])
-                start = end
-                temp = end
-        if (temp - start) <= imputation_time_delta and (start!=series.head(1).index and end!=series.tail(1).index):
-            col_imputation_list.append([start, temp])
-
-        # 对满足imputation_time_delta的空值进行线性插值
-        for imputation in col_imputation_list:
-            data_frame[col].loc[imputation[0]-sampling_time_delta: imputation[1]+sampling_time_delta] = \
-                series.loc[imputation[0]-sampling_time_delta: imputation[1]+sampling_time_delta].interpolate(method='polynomial', order=1)
-        
-    return data_frame
-
 
 
