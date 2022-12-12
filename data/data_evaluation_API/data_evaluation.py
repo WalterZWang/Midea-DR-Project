@@ -27,7 +27,7 @@ def resampling(df: pd.DataFrame, rsp_time: str='15min', **kw) -> pd.DataFrame:
     df_rsp = copy.deepcopy(df)
     return df_rsp.resample(rsp_time).mean()
 
-def cal_missing_rate(df: pd.DataFrame, step: int, ms_thresh: float, **kw) -> pd.DataFrame:
+def cal_missing_rate(df: pd.DataFrame, step: int, ms_thresh: float=0.2, **kw) -> pd.DataFrame:
     '''
     Calculates the missing rate of a data_frame
     '''
@@ -55,23 +55,42 @@ def cal_missing_rate(df: pd.DataFrame, step: int, ms_thresh: float, **kw) -> pd.
         idx_thresh = idx_thresh.dropna()
         # 所有数据满足距离当前时间段最近的3天缺失率低于20%的时刻
         closest_time = idx_thresh.tail(1).index.strftime('%Y-%m-%d %H:%M:00')
-        print(f'The closest moment meets the condition(< {ms_thresh}) for multivariables: ', closest_time[0], '\n------------------\n\n')
+        print(f'The closest moment meets the condition (missing rate < {ms_thresh}) for multivariables: ', closest_time[0], '\n------------------\n\n')
+
+    if 'plot' in kw:
+        if kw['plot']:
+            if 'mark' in kw:
+                mark = kw['mark']
+                df.plot(title=f'Measurement data ({mark})', figsize=(12,6))
+                plt.legend(loc = 'upper left')
+                missing_rate.plot(title=f'Missing Rate ({step} steps forward) ({mark})', figsize=(12,6))
+                plt.legend(loc = 'upper left')
+                plt.show()
+            else:
+                df.plot(title=f'Measurement data', figsize=(12,6))
+                plt.legend(loc = 'upper left')
+                missing_rate.plot(title=f'Missing Rate ({step} steps forward)', figsize=(12,6))
+                plt.legend(loc = 'upper left')
+                plt.show()
+
 
     return missing_rate
 
 def remove_outliers(df: pd.DataFrame, window: int, **kw) -> pd.DataFrame:
     '''remove outliers in a data_frame'''
 
-    Q1 = df.rolling(window, center=True, min_periods=1).quantile(0.25)
-    Q3 = df.rolling(window, center=True, min_periods=1).quantile(0.75)
+    df_new = copy.deepcopy(df)
+
+    Q1 = df_new.rolling(window, center=True, min_periods=1).quantile(0.25)
+    Q3 = df_new.rolling(window, center=True, min_periods=1).quantile(0.75)
     IQR = Q3 - Q1
     min = Q1 - 2*IQR
     max = Q3 + 2*IQR
 
-    for i in range(df.shape[0]):
-        for j in range(df.shape[1]):
-            if df.iat[i, j] < min.iat[i, j] or df.iat[i, j] > max.iat[i, j]:
-                df.iat[i, j] = np.nan
+    for i in range(df_new.shape[0]):
+        for j in range(df_new.shape[1]):
+            if df_new.iat[i, j] < min.iat[i, j] or df_new.iat[i, j] > max.iat[i, j]:
+                df_new.iat[i, j] = np.nan
 
     # Q1 = df.quantile(0.25)
     # Q3 = df.quantile(0.75)
@@ -92,21 +111,21 @@ def remove_outliers(df: pd.DataFrame, window: int, **kw) -> pd.DataFrame:
     #     df[col][df[col]<min] = np.nan
     #     df[col][df[col]>max] = np.nan
 
-    return df
+    return df_new
 
 def linear_imputation(df: pd.DataFrame, imputation_time_delta: pd.Timedelta, rsp_time: pd.Timedelta, **kw) -> pd.DataFrame:
     '''
     Linear interpolation of a data_frame
 
     df: data that belongs to the "data_frame" format.
-    imputation_time_delta: data loss for more than consecutive imputation_time_delta will not be interpolated.
+    imputation_time_delta: data missing for more than consecutive imputation_time_delta will not be interpolated.
     sampling_time_delta: sampling interval.
     '''
-
-    for col in df.columns:
+    df_new = copy.deepcopy(df)
+    for col in df_new.columns:
         # 不对启停(0,1)数据进行插值
         if col in ['onOff', 'exv1Opening']: continue
-        series = df[col]
+        series = df_new[col]
 
         # 获取空值索引
         series_nan = series[series.isna()]
@@ -132,17 +151,19 @@ def linear_imputation(df: pd.DataFrame, imputation_time_delta: pd.Timedelta, rsp
 
         # 对满足imputation_time_delta的空值进行线性插值
         for imputation in series_imputation_list:
-            df[col].loc[imputation[0]-rsp_time: imputation[1]+rsp_time] = \
+            df_new[col].loc[imputation[0]-rsp_time: imputation[1]+rsp_time] = \
                 series.loc[imputation[0]-rsp_time: imputation[1]+rsp_time].interpolate(method='polynomial', order=1)
         
-    return df
+    return df_new
 
 
+
+
+
+
+'''
 
 def cal_missing_rate_old(data_frame, time_window, params):
-    '''
-    Calculates the missing rate of a data_frame
-    '''
 
     missing_rate = pd.DataFrame(data=None, columns=data_frame.columns)
     for i in range(0, (params['end_time']-params['start_time']).days//time_window):
@@ -154,10 +175,8 @@ def cal_missing_rate_old(data_frame, time_window, params):
 
     return missing_rate
 
-def plot_missing_rate(missing_rate, params, params_process, mark):
-    '''
-    Plot missing rate over time
-    '''
+def plot_missing_rate_old(missing_rate, params, params_process, mark):
+    
     id = params['tag_dict']['nid'].split('/')[-3][-4:]
     label = params['tag_dict']['nid'].split('/')[-2] + '_' + params['tag_dict']['nid'].split('/')[-1]
     step = params_process['step']
@@ -179,4 +198,4 @@ def plot_missing_rate(missing_rate, params, params_process, mark):
     print(id + f' Missing Rate ({step} steps forward) ' + mark)
     return
 
-
+'''
