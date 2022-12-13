@@ -1,6 +1,7 @@
 # Meeting Notes
 
 - [June](#2022-06-15)
+- [Dec.](#2022-12-13)
 
 ## 2022-06-15
 ### Agenda
@@ -51,3 +52,27 @@
     - Think about the room level R-C model, read some paper if you have time
 - Wutao
     - Literature review on VRF modeling methods for MPC purpose, starting from papers published by [Donghun Kim](https://scholar.google.com/citations?hl=en&user=Og5AGMMAAAAJ&view_op=list_works&sortby=pubdate)
+
+## 2022-12-13
+### Discussion
+- Details of the data-driven method, why it is more accurate than RC model?
+- Which data you have used for training
+
+### Next steps
+#### Zhenyu
+- Refactor your code using the new structure in the main branch
+- Outlier detection: understand, implement, compare different methods, and recommend the suitable one for different type of data
+    - Something to start with: 3-sigma, DBSCAN, isolation forest, KernelDensity. 
+        - You can find an open source outlier detection code [here](https://github.com/apachecn/ml-mastery-zh/blob/master/docs/algo/anomaly-detection-with-isolation-forest-and-kernel-density-estimation.md)
+    - Read other paper, and propose more
+- Missing data imputation
+    - Start from this [paper](https://ieeexplore.ieee.org/abstract/document/9378230)
+    - Propose and compare more
+#### Wanfu
+- Add detailed comments
+- PV prediction using heristic method
+- Push the cooling capacity result to Influxdb
+- Implement the cooling capacity calculation code, and deploy it online
+#### Dan
+- Another version of open loop control, start at 0:00 AM every morning, do a 24 hour optimization without replanning
+- Standardize the workflow and structure, make it also suitable for other VRFs
