@@ -96,7 +96,7 @@ class DataPreprocess(object):
             best = missing_rate[col].iloc[idxmin[0]].tail(1)
             best_time = best.index.strftime('%Y-%m-%d %H:%M:00')
             print(f'{col} {label}, the closest optimal moment to the present: ', best_time[0], '\n------------------')
-            ms_results[col] = best_time
+            ms_results[col] = best_time[0]
 
         # 当dataframe有多组数据时
         if len(data.columns) > 1:
@@ -106,7 +106,7 @@ class DataPreprocess(object):
             # 所有数据满足距离当前时间段最近的3天缺失率低于20%的时刻
             closest_time = idx_thresh.tail(1).index.strftime('%Y-%m-%d %H:%M:00')
             print(f'{label}, the closest moment meets the condition (missing rate < {ms_thresh}) for multiple data: ', closest_time[0], '\n------------------\n\n')
-            ms_results['closest_time_multi'] = closest_time
+            ms_results['closest_time_multi'] = closest_time[0]
 
         if plot:
             data.plot(title=f'Measurement data ({label})', figsize=(12,6))
@@ -117,29 +117,32 @@ class DataPreprocess(object):
 
         return missing_rate, ms_results
 
-    def remove_outlier(self, method='boxplot', **kw) -> None:
+    def outlier_detect(self, method='boxplot', remove_outlier=True, **kw) -> None:
         '''
-        method = ['boxplot', '', '']
+        method = ['boxplot', 'IF', '']
         '''
+        self.data_rmol = copy.deepcopy(self.data)
+        assert self.data_rmol is not None, "Plese verify the original data is not empty."
+
         if method == 'boxplot':
             if 'win_size' in kw: win_size = kw['win_size']
             else: win_size = self.win_size
+            self.data_rmol, _ = od_boxplot(self.data_rmol, win_size, remove_outlier)
 
-            self.data_rmol = copy.deepcopy(self.data)
-            self.data_rmol = rmol_boxplot(self.data_rmol, win_size)
+        elif method == 'IF':
+            self.data_rmol, _ = od_IF(self.data_rmol)
 
         elif method == '':
             pass
-        elif method == '':
-            pass
-        else: assert False, "Please enter the correct method: 'boxplot', '', ''."
+
+        else: assert False, "Please enter the correct method: 'boxplot', 'IF', ''."
 
     def impute(self, method='linear', **kw) -> None:
         '''
         method = ['linear', '', '']
         '''
         self.data_impute = copy.deepcopy(self.data_rmol)
-        assert self.data_impute is not None, "The data should be removed outliers first by self.remove_outlier()."
+        assert self.data_impute is not None, "The data should be removed outliers first by self.outlier_detect()."
 
         if method == 'linear':
             if 'sampling_time' in kw: sampling_time = kw['sampling_time']
@@ -148,10 +151,9 @@ class DataPreprocess(object):
             else: linear_time_delta = self.linear_time_delta
 
             for col in self.data_impute.columns:
-                # 0-1 value would not be imputed
-                if self.column_type[col] == 'Sys': continue
+                if self.column_type[col] == 'Sys': continue   # Discrete value like 0-1 would not be imputed
                 self.data_impute[col] = \
-                    impute_linear(data=self.data_impute[col].to_frame(), sampling_time=sampling_time, linear_time_delta=linear_time_delta)
+                    impute_linear(df=self.data_impute[col].to_frame(), sampling_time=sampling_time, linear_time_delta=linear_time_delta)
 
         elif method == '':
             pass
@@ -159,8 +161,8 @@ class DataPreprocess(object):
             pass
         else: assert False, "Please enter the correct method: 'linear', '', ''."
 
-    def process(self, rmol_method='boxplot', impute_method='linear') -> (pd.DataFrame, pd.DataFrame, dict):
-        self.remove_outlier(method=rmol_method)
+    def process(self, oldt_method='boxplot', impute_method='linear') -> (pd.DataFrame, pd.DataFrame, dict):
+        self.outlier_detect(method=oldt_method, remove_outlier=True)
         self.impute(method=impute_method)
         ms, ms_results = self.missing_rate(label='imputation')
         return self.data_impute, ms, ms_results
@@ -182,29 +184,89 @@ def valid_data(data, interval_min_day=2, interval_max_day=10) -> pd.DataFrame:
 
 
 #%% outlier detection functions
-def rmol_boxplot(data: pd.DataFrame, win_size: int, **kw) -> pd.DataFrame:
+def od_boxplot(df: pd.DataFrame, win_size: int, thresh=2.5, plot=False, remove_outlier=False, **kw) -> (pd.DataFrame, list):
     '''
-    remove outliers by boxplot
+    remove outliers by boxplot.
+    return:
+        pd.DataFrame: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
+        list: outliers' indexes of original data.
     '''
+    data = copy.deepcopy(df)
+    
     Q1 = data.rolling(win_size, center=True, min_periods=1).quantile(0.25)
     Q3 = data.rolling(win_size, center=True, min_periods=1).quantile(0.75)
     IQR = Q3 - Q1
-    min = Q1 - 2*IQR
-    max = Q3 + 2*IQR
+    min = Q1 - thresh*IQR
+    max = Q3 + thresh*IQR
 
-    for i in range(data.shape[0]):
-        for j in range(data.shape[1]):
-            if data.iat[i, j] < min.iat[i, j] or data.iat[i, j] > max.iat[i, j]:
-                data.iat[i, j] = np.nan
+    outlier_indexes = []
+    for col in data.columns:
+        outlier_index = np.where((data[col]<min[col]) | (data[col]>max[col]))
+        outlier_indexes.append(outlier_index)
 
-    return data
+        if remove_outlier:
+            data[col].iloc[outlier_index] = np.nan
 
+    # for i in range(data.shape[0]):
+    #     for j in range(data.shape[1]):
+    #         if data.iat[i, j] < min.iat[i, j] or data.iat[i, j] > max.iat[i, j]:
+    #             data.iat[i, j] = np.nan
+
+    if plot and remove_outlier:
+        df.plot(subplots=True, title=f'Measurement data (original)')
+        plt.legend(loc = 'upper left')
+        plt.show()
+        data.plot(subplots=True, title=f'Measurement data (rmol_boxplot)')
+        plt.legend(loc = 'upper left')
+        plt.show()
+
+    return data, outlier_indexes
+
+def od_IF(df:pd.DataFrame) -> (pd.DataFrame, list):
+    '''
+    remove outliers by Isolation Forest.
+    return:
+        pd.DataFrame: original data dropped NA.
+        list: outliers' indexes of original data dropped NA.
+    '''
+    from sklearn.ensemble import IsolationForest
+
+    data = copy.deepcopy(df)
+    data = data.dropna()
+
+    outlier_indexes = []
+    for col in data.columns:
+        IF = IsolationForest(n_estimators=100, contamination=.02)
+        predictions = IF.fit_predict(data[col].to_frame())
+        outlier_index = np.where(predictions==-1)
+        outlier_indexes.append(outlier_index)
+
+    return data, outlier_indexes
+
+def od_IF_multi(df:pd.DataFrame) -> (pd.DataFrame, list):
+    '''
+    remove outliers by Isolation Forest (multivariable).
+    return:
+        pd.DataFrame: original data dropped NA.
+        list: outliers' index of original data dropped NA.
+    '''
+    from sklearn.ensemble import IsolationForest
+
+    data = copy.deepcopy(df)
+    data = data.dropna()
+
+    IF = IsolationForest(n_estimators=100, contamination=.02)
+    predictions = IF.fit_predict(data)
+    outlier_index = np.where(predictions==-1)
+
+    return data, outlier_index 
 
 #%% data imputation functions
-def impute_linear(data:pd.DataFrame, sampling_time:pd.Timedelta, linear_time_delta:pd.Timedelta) -> pd.DataFrame:
+def impute_linear(df:pd.DataFrame, sampling_time:pd.Timedelta, linear_time_delta:pd.Timedelta) -> pd.DataFrame:
     '''
     impute data by linear interpolation
     '''
+    data = copy.deepcopy(df)
     for col in data.columns:
         series = data[col]
 
