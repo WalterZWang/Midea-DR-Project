@@ -27,10 +27,10 @@ class DataPreprocess(object):
     sampling_time = pd.Timedelta('15 min')
     sampling_rate = 4   # 4 times per hour, depends on sampling time
     # parameters of calculate missing rate
-    step = 4*24*3   # step=4/h*24h/day*3day means to calculate the missing rate three days forward at each moment
+    step = 4*24*3   # step = sampling_rate/h*24h/day*3day means to calculate the missing rate three days backward at each moment
     ms_thresh = 0.2   # the condition of missing rate (< ms_thresh) for multiple data
-    # parameters of remove outliers
-    win_size = 4*24*3   # time window size of remove outliers
+    # parameters of outlier detect
+    win_size = None   # time window size of remove outliers, 'None' means 'win_size == time period for all data'
     # parameters of data imputation
     linear_time_delta = pd.Timedelta('6 hours')   # data missing for more than consecutive linear_time_delta will not be linear imputation
     
@@ -44,7 +44,7 @@ class DataPreprocess(object):
             Value is the data type, currently we support the following types {'T_amb', 'T_sys', 'Sys', 'Meter', 'Other'}, standing for
                 - T_amb: ambient temperature, including the room and outdoor temperature
                 - T_sys: system related temperature, including the evaporative temperature, condensing temperature, ...
-                - Sys: system operational data, including the operations such as start and stop, the value is 0-1
+                - Sys: system operational data, including the operations such as start and stop, the value is discrete like 0-1
                 - Meter: electrical and power meter data
                 - Other: other data types
         '''
@@ -103,15 +103,18 @@ class DataPreprocess(object):
             # 获取每一行数据的missing_rate都小于ms_thresh的所有索引
             idx_thresh = missing_rate[missing_rate <= ms_thresh]
             idx_thresh = idx_thresh.dropna()
-            # 所有数据满足距离当前时间段最近的3天缺失率低于20%的时刻
+            # 所有数据满足距离当前时间段最近的3天缺失率低于ms_thresh的时刻
             closest_time = idx_thresh.tail(1).index.strftime('%Y-%m-%d %H:%M:00')
-            print(f'{label}, the closest moment meets the condition (missing rate < {ms_thresh}) for multiple data: ', closest_time[0], '\n------------------\n\n')
-            ms_results['closest_time_multi'] = closest_time[0]
+            if not any(closest_time):
+                print(f'{label}, there is no moment meets the condition (missing rate < {ms_thresh}) for multiple data.', '\n------------------\n\n')
+            else:
+                print(f'{label}, the closest moment meets the condition (missing rate < {ms_thresh}) for multiple data: ', closest_time[0], '\n------------------\n\n')
+                ms_results['closest_time_multi'] = closest_time[0]
 
         if plot:
             data.plot(title=f'Measurement data ({label})', figsize=(12,6))
             plt.legend(loc = 'upper left')
-            missing_rate.plot(title=f'Missing Rate ({step} steps forward) ({label})', figsize=(12,6))
+            missing_rate.plot(title=f'Missing Rate ({step} steps backward) ({label})', figsize=(12,6))
             plt.legend(loc = 'upper left')
             plt.show()
 
@@ -119,47 +122,49 @@ class DataPreprocess(object):
 
     def outlier_detect(self, method='boxplot', remove_outlier=True, **kw) -> None:
         '''
-        method = ['boxplot', 'IF', '']
+        method = ['boxplot', '3-sigma', 'kernal_density', 'isolation_forest']
         '''
         self.data_rmol = copy.deepcopy(self.data)
         assert self.data_rmol is not None, "Plese verify the original data is not empty."
+        self.data_rmol = od_negative(self.data_rmol, self.column_type)
 
         if method == 'boxplot':
-            if 'win_size' in kw: win_size = kw['win_size']
-            else: win_size = self.win_size
+            win_size = self.win_size
             self.data_rmol, _ = od_boxplot(self.data_rmol, win_size, remove_outlier)
 
-        elif method == 'IF':
-            self.data_rmol, _ = od_IF(self.data_rmol)
+        elif method == '3-sigma':
+            win_size = self.win_size
+            self.data_rmol, _ = od_sigma(self.data_rmol, win_size, remove_outlier)
 
-        elif method == '':
-            pass
+        elif method == 'kernal_density':
+            self.data_rmol, _ = od_KD(self.data_rmol, remove_outlier)
 
-        else: assert False, "Please enter the correct method: 'boxplot', 'IF', ''."
+        elif method == 'isolation_forest':
+            self.data_rmol, _ = od_IF(self.data_rmol, remove_outlier)
+
+        else: assert False, "Please enter the correct method: 'boxplot', '3-sigma', 'kernal_density', 'isolation_forest'."
 
     def impute(self, method='linear', **kw) -> None:
         '''
-        method = ['linear', '', '']
+        method = ['linear', 'KNN', 'MICE']
         '''
-        self.data_impute = copy.deepcopy(self.data_rmol)
-        assert self.data_impute is not None, "The data should be removed outliers first by self.outlier_detect()."
+        if self.data_rmol: self.data_impute = copy.deepcopy(self.data_rmol)
+        else: self.data_impute = copy.deepcopy(self.data)
+        assert self.data_impute is not None, "Plese verify the original data is not empty."
 
         if method == 'linear':
-            if 'sampling_time' in kw: sampling_time = kw['sampling_time']
-            else: sampling_time = self.sampling_time
-            if 'linear_time_delta' in kw: linear_time_delta = kw['linear_time_delta']
-            else: linear_time_delta = self.linear_time_delta
-
+            sampling_time = self.sampling_time
+            linear_time_delta = self.linear_time_delta
             for col in self.data_impute.columns:
                 if self.column_type[col] == 'Sys': continue   # Discrete value like 0-1 would not be imputed
                 self.data_impute[col] = \
                     impute_linear(df=self.data_impute[col].to_frame(), sampling_time=sampling_time, linear_time_delta=linear_time_delta)
 
-        elif method == '':
+        elif method == 'KNN':
             pass
-        elif method == '':
+        elif method == 'MICE':
             pass
-        else: assert False, "Please enter the correct method: 'linear', '', ''."
+        else: assert False, "Please enter the correct method: 'linear', 'KNN', 'MICE'."
 
     def process(self, oldt_method='boxplot', impute_method='linear') -> (pd.DataFrame, pd.DataFrame, dict):
         self.outlier_detect(method=oldt_method, remove_outlier=True)
@@ -169,6 +174,7 @@ class DataPreprocess(object):
 
     def evaluate(self) -> float:
         pass
+
 
 #%% identify the valid data set for training
 def valid_data(data, interval_min_day=2, interval_max_day=10) -> pd.DataFrame:
@@ -184,17 +190,33 @@ def valid_data(data, interval_min_day=2, interval_max_day=10) -> pd.DataFrame:
 
 
 #%% outlier detection functions
-def od_boxplot(df: pd.DataFrame, win_size: int, thresh=2.5, plot=False, remove_outlier=False, **kw) -> (pd.DataFrame, list):
+def od_negative(df:pd.DataFrame, column_type:dict, **kw) -> pd.DataFrame:
     '''
-    remove outliers by boxplot.
+    remove negative.
+    '''
+    data = copy.deepcopy(df)
+    for col in data.columns:
+        if column_type[col] == 'Meter': 
+            data[col].loc[data[col] < 0]  = np.nan
+
+    return data
+
+def od_boxplot(df:pd.DataFrame, win_size:int, thresh=3, remove_outlier=True, plot=False, **kw) -> (pd.DataFrame, list):
+    '''
+    remove outliers by boxplot (univariable).
     return:
         pd.DataFrame: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
         list: outliers' indexes of original data.
     '''
     data = copy.deepcopy(df)
     
-    Q1 = data.rolling(win_size, center=True, min_periods=1).quantile(0.25)
-    Q3 = data.rolling(win_size, center=True, min_periods=1).quantile(0.75)
+    # 'win_size == None' means 'win_size == time period for all data'
+    if not win_size:
+        Q1 = data.quantile(0.25)
+        Q3 = data.quantile(0.75)
+    else:
+        Q1 = data.rolling(win_size, center=True, min_periods=1).quantile(0.25)
+        Q3 = data.rolling(win_size, center=True, min_periods=1).quantile(0.75)
     IQR = Q3 - Q1
     min = Q1 - thresh*IQR
     max = Q3 + thresh*IQR
@@ -203,78 +225,149 @@ def od_boxplot(df: pd.DataFrame, win_size: int, thresh=2.5, plot=False, remove_o
     for col in data.columns:
         outlier_index = np.where((data[col]<min[col]) | (data[col]>max[col]))
         outlier_indexes.append(outlier_index)
-
         if remove_outlier:
             data[col].iloc[outlier_index] = np.nan
 
-    # for i in range(data.shape[0]):
-    #     for j in range(data.shape[1]):
-    #         if data.iat[i, j] < min.iat[i, j] or data.iat[i, j] > max.iat[i, j]:
-    #             data.iat[i, j] = np.nan
-
     if plot and remove_outlier:
         df.plot(subplots=True, title=f'Measurement data (original)')
-        plt.legend(loc = 'upper left')
-        plt.show()
         data.plot(subplots=True, title=f'Measurement data (rmol_boxplot)')
-        plt.legend(loc = 'upper left')
         plt.show()
 
     return data, outlier_indexes
 
-def od_IF(df:pd.DataFrame) -> (pd.DataFrame, list):
+def od_sigma(df:pd.DataFrame, win_size: int, thresh=3, remove_outlier=True, plot=False, **kw) -> (pd.DataFrame, list):
     '''
-    remove outliers by Isolation Forest.
+    remove outliers by n-sigma (univariable), data should follow normal distribution.
     return:
-        pd.DataFrame: original data dropped NA.
-        list: outliers' indexes of original data dropped NA.
+        pd.DataFrame: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
+        list: outliers' indexes of original data.
     '''
-    from sklearn.ensemble import IsolationForest
-
     data = copy.deepcopy(df)
-    data = data.dropna()
+
+    # 'win_size == None' means 'win_size == time period for all data'
+    if not win_size:
+        std = data.std()
+        mean = data.mean()
+    else:
+        std = data.rolling(win_size, center=True, min_periods=1).std()
+        mean = data.rolling(win_size, center=True, min_periods=1).mean()
 
     outlier_indexes = []
     for col in data.columns:
-        IF = IsolationForest(n_estimators=100, contamination=.02)
-        predictions = IF.fit_predict(data[col].to_frame())
-        outlier_index = np.where(predictions==-1)
+        outlier_index = np.where(abs(data[col] - mean[col]) > thresh*std[col])
         outlier_indexes.append(outlier_index)
+        if remove_outlier:
+            data[col].iloc[outlier_index] = np.nan
+    
+    if plot and remove_outlier:
+        df.plot(subplots=True, title=f'Measurement data (original)')
+        data.plot(subplots=True, title=f'Measurement data (rmol_sigma)')
+        plt.show()
 
     return data, outlier_indexes
 
-def od_IF_multi(df:pd.DataFrame) -> (pd.DataFrame, list):
+def od_KD(df:pd.DataFrame, remove_outlier=True, plot=False, **kw) -> (pd.DataFrame, list):
+    '''
+    remove outliers by Kernal Density (univariable).
+    return:
+        pd.DataFrame: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
+        list: outliers' indexes of original data.
+    '''
+    from sklearn.neighbors import KernelDensity
+    data = copy.deepcopy(df)
+
+    outlier_indexes = []
+    for col in data.columns:
+        col_dropna = data[col].to_frame().dropna()
+        kern_dens = KernelDensity()
+        kern_dens.fit(col_dropna)
+        scores = kern_dens.score_samples(col_dropna)
+        threshold = np.quantile(scores, .02)
+        outlier_dateindex = col_dropna.iloc[np.where(scores<=threshold)].index
+
+        outlier_index = data[col].index.get_indexer(outlier_dateindex)
+        outlier_indexes.append(outlier_index)
+        if remove_outlier:
+            data[col].iloc[outlier_index] = np.nan
+
+    if plot and remove_outlier:
+        df.plot(subplots=True, title=f'Measurement data (original)')
+        data.plot(subplots=True, title=f'Measurement data (rmol_KD)')
+        plt.show()
+
+    return data, outlier_indexes
+
+def od_IF(df:pd.DataFrame, remove_outlier=True, plot=False, **kw) -> (pd.DataFrame, list):
+    '''
+    remove outliers by Isolation Forest (univariable).
+    return:
+        pd.DataFrame: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
+        list: outliers' indexes of original data.
+    '''
+    from sklearn.ensemble import IsolationForest
+    data = copy.deepcopy(df)
+
+    outlier_indexes = []
+    for col in data.columns:
+        col_dropna = data[col].to_frame().dropna()
+        IF = IsolationForest(n_estimators=100, contamination=0.02)
+        predictions = IF.fit_predict(col_dropna)
+        outlier_dateindex = col_dropna.iloc[np.where(predictions==-1)].index
+
+        outlier_index = data[col].index.get_indexer(outlier_dateindex)
+        outlier_indexes.append(outlier_index)
+        if remove_outlier:
+            data[col].iloc[outlier_index] = np.nan
+
+    if plot and remove_outlier:
+        df.plot(subplots=True, title=f'Measurement data (original)')
+        data.plot(subplots=True, title=f'Measurement data (rmol_IF)')
+        plt.show()
+
+    return data, outlier_indexes
+
+def od_IF_multi(df:pd.DataFrame, remove_outlier=True, plot=False, **kw) -> (pd.DataFrame, list):
     '''
     remove outliers by Isolation Forest (multivariable).
     return:
-        pd.DataFrame: original data dropped NA.
-        list: outliers' index of original data dropped NA.
+        pd.DataFrame: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
+        list: outliers' index of original data.
     '''
     from sklearn.ensemble import IsolationForest
 
     data = copy.deepcopy(df)
-    data = data.dropna()
+    data_dropna = data.dropna()
 
     IF = IsolationForest(n_estimators=100, contamination=.02)
-    predictions = IF.fit_predict(data)
-    outlier_index = np.where(predictions==-1)
+    predictions = IF.fit_predict(data_dropna)
+    outlier_dateindex = data_dropna.iloc[np.where(predictions==-1)].index
+    outlier_index = data.index.get_indexer(outlier_dateindex)
+    if remove_outlier:
+        data.iloc[outlier_index] = np.nan
+
+    if plot and remove_outlier:
+        df.plot(subplots=True, title=f'Measurement data (original)')
+        data.plot(subplots=True, title=f'Measurement data (rmol_IF_multi)')
+        plt.show()
 
     return data, outlier_index 
 
+
 #%% data imputation functions
-def impute_linear(df:pd.DataFrame, sampling_time:pd.Timedelta, linear_time_delta:pd.Timedelta) -> pd.DataFrame:
+def impute_linear(df:pd.DataFrame, sampling_time:pd.Timedelta, linear_time_delta:pd.Timedelta, plot=False, **kw) -> pd.DataFrame:
     '''
-    impute data by linear interpolation
+    impute data by linear interpolation (univariable).
+    return:
+        pd.DataFrame: data imputed.
     '''
     data = copy.deepcopy(df)
+
     for col in data.columns:
         series = data[col]
-
         # 获取空值索引
         series_nan = series[series.isna()]
         series_nan_index = series_nan.index
         if series_nan_index.empty: continue
-        
         # 获取小于imputation_time_delta的空值索引
         series_imputation_list = []
         start = series_nan_index[0]
@@ -291,14 +384,52 @@ def impute_linear(df:pd.DataFrame, sampling_time:pd.Timedelta, linear_time_delta
                 temp = end
         if ((temp - start) <= linear_time_delta) and (start!=series.head(1).index and end!=series.tail(1).index):
             series_imputation_list.append([start, temp])
-
         # 对满足imputation_time_delta的空值进行线性插值
         for imputation in series_imputation_list:
             data[col].loc[imputation[0]-sampling_time: imputation[1]+sampling_time] = \
                 series.loc[imputation[0]-sampling_time: imputation[1]+sampling_time].interpolate(method='polynomial', order=1)
-    
+
+    if plot:
+        df.plot(subplots=True, title=f'Measurement data (original)')
+        data.plot(subplots=True, title=f'Measurement data (imputation_linear)')
+        plt.show()
+
     return data
 
+def impute_KNN(df:pd.DataFrame, plot=False, **kw) -> pd.DataFrame:
+    '''
+    impute data by K-Nearest Neighbor (multivariable).
+    return:
+        pd.DataFrame: data imputed.
+    '''
+    from sklearn.impute import KNNImputer
+
+    data = copy.deepcopy(df)
+
+    imputer = KNNImputer(n_neighbors=5, weights="uniform")
+    data = pd.DataFrame(data=imputer.fit_transform(data), index=df.index, columns=df.columns, dtype='float')
+
+    if plot:
+        df.plot(subplots=True, title=f'Measurement data (original)')
+        data.plot(subplots=True, title=f'Measurement data (imputation_KNN)')
+        plt.show()
+
+    return data
+
+def impute_MICE(df:pd.DataFrame, plot=False, **kw) -> pd.DataFrame:
+    '''
+    impute data by MICE (multivariable).
+    return:
+        pd.DataFrame: data imputed.
+    '''
+    data = copy.deepcopy(df)
+
+    if plot:
+        df.plot(subplots=True, title=f'Measurement data (original)')
+        data.plot(subplots=True, title=f'Measurement data (imputation_MICE)')
+        plt.show()
+
+    return data
 
 # for col in self.data_impute.columns:
         #     if self.column_type[col] == 'T_amb':
