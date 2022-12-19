@@ -26,9 +26,6 @@ class DataPreprocess(object):
     # common parameters
     sampling_time = pd.Timedelta('15 min')
     sampling_rate = 4   # 4 times per hour, depends on sampling time
-    # parameters of calculate missing rate
-    step = 4*24*3   # step = sampling_rate/h*24h/day*3day means to calculate the missing rate three days backward at each moment
-    ms_thresh = 0.2   # the condition of missing rate (< ms_thresh) for multiple data
     # parameters of outlier detect
     win_size = None   # time window size of remove outliers, 'None' means 'win_size == time period for all data'
     # parameters of data imputation
@@ -57,68 +54,8 @@ class DataPreprocess(object):
 
         if 'sampling_time' in kw: self.sampling_time = kw['sampling_time']
         if 'sampling_rate' in kw: self.sampling_rate = kw['sampling_rate'] 
-        if 'step' in kw: self.step = kw['step']
-        if 'ms_thresh' in kw: self.ms_thresh = kw['ms_thresh']
         if 'win_size' in kw: self.win_size = kw['win_size'] 
         if 'linear_time_delta' in kw: self.linear_time_delta = kw['linear_time_delta']
-
-    def missing_rate(self, label='original', plot=True, **kw) -> (pd.DataFrame, dict):
-        '''
-        label = ['original', 'remove_outlier', 'imputation']
-        '''
-        if label == 'original':
-            data = self.data
-        elif label == 'remove_outlier':
-            data = self.data_rmol
-            assert data is not None, "The data should be removed outliers first by self.outlier_detect()."
-        elif label == 'imputation':
-            data = self.data_impute
-            assert data is not None, "The data should be removed outliers and imputed first by self.outlier_detect() and self.impute()"
-        else: assert False, "Please enter the correct label: 'original', 'remove_outlier', 'imputation'."
-        
-        if 'step' in kw: step = kw['step']
-        else: step = self.step
-        if 'ms_thresh' in kw: ms_thresh = kw['ms_thresh']
-        else: ms_thresh = self.ms_thresh
-
-        missing_rate = pd.DataFrame(data=None, index=data.index, columns=data.columns)
-        for col in data.columns:
-            missing_rate[col] = 1 - (data[col].rolling(step, min_periods=0).count() / float(step))
-        describe = missing_rate.describe()
-        
-        ms_results = {}
-        for col in data.columns:
-            print(f'{col} {label}, minimal missing rate: ', describe.loc['min', col])
-            print(f'{col} {label}, average missing rate: ', describe.loc['mean', col])
-            # 获取具有最小missing_rate时刻的所有索引
-            idxmin = np.where(missing_rate[col] == missing_rate[col].min())
-            # 获得最近的具有最小missing_rate的时刻
-            best = missing_rate[col].iloc[idxmin[0]].tail(1)
-            best_time = best.index.strftime('%Y-%m-%d %H:%M:00')
-            print(f'{col} {label}, the closest optimal moment to the present: ', best_time[0], '\n------------------')
-            ms_results[col] = best_time[0]
-
-        # 当dataframe有多组数据时
-        if len(data.columns) > 1:
-            # 获取每一行数据的missing_rate都小于ms_thresh的所有索引
-            idx_thresh = missing_rate[missing_rate <= ms_thresh]
-            idx_thresh = idx_thresh.dropna()
-            # 所有数据满足距离当前时间段最近的3天缺失率低于ms_thresh的时刻
-            closest_time = idx_thresh.tail(1).index.strftime('%Y-%m-%d %H:%M:00')
-            if not any(closest_time):
-                print(f'{label}, there is no moment meets the condition (missing rate < {ms_thresh}) for multiple data.', '\n------------------\n\n')
-            else:
-                print(f'{label}, the closest moment meets the condition (missing rate < {ms_thresh}) for multiple data: ', closest_time[0], '\n------------------\n\n')
-                ms_results['closest_time_multi'] = closest_time[0]
-
-        if plot:
-            data.plot(title=f'Measurement data ({label})', figsize=(12,6))
-            plt.legend(loc = 'upper left')
-            missing_rate.plot(title=f'Missing Rate ({step} steps backward) ({label})', figsize=(12,6))
-            plt.legend(loc = 'upper left')
-            plt.show()
-
-        return missing_rate, ms_results
 
     def outlier_detect(self, method='boxplot', remove_outlier=True, **kw) -> None:
         '''
@@ -146,9 +83,9 @@ class DataPreprocess(object):
 
     def impute(self, method='linear', **kw) -> None:
         '''
-        method = ['linear', 'KNN', 'MICE']
+        method = ['linear', 'KNN']
         '''
-        if self.data_rmol: self.data_impute = copy.deepcopy(self.data_rmol)
+        if self.data_rmol is not None: self.data_impute = copy.deepcopy(self.data_rmol)
         else: self.data_impute = copy.deepcopy(self.data)
         assert self.data_impute is not None, "Plese verify the original data is not empty."
 
@@ -162,31 +99,94 @@ class DataPreprocess(object):
 
         elif method == 'KNN':
             pass
-        elif method == 'MICE':
+        elif method == '':
             pass
-        else: assert False, "Please enter the correct method: 'linear', 'KNN', 'MICE'."
+        else: assert False, "Please enter the correct method: 'linear', 'KNN'."
 
-    def process(self, oldt_method='boxplot', impute_method='linear') -> (pd.DataFrame, pd.DataFrame, dict):
+    def process(self, oldt_method='boxplot', impute_method='linear') -> None:
+        '''
+        oldt_method = ['boxplot', '3-sigma', 'kernal_density', 'isolation_forest'].
+        impute_method = ['linear', 'KNN'].
+        '''
         self.outlier_detect(method=oldt_method, remove_outlier=True)
         self.impute(method=impute_method)
-        ms, ms_results = self.missing_rate(label='imputation')
-        return self.data_impute, ms, ms_results
 
     def evaluate(self) -> float:
         pass
 
 
 #%% identify the valid data set for training
-def valid_data(data, interval_min_day=2, interval_max_day=10) -> pd.DataFrame:
+def valid_data(df:pd.DataFrame, sampling_time:pd.Timedelta, sampling_rate:float, \
+    step_min:int, step_max:int, ms_thresh=0.2, label='original', plot=False, **kw) -> pd.DataFrame:
     '''
-    data: dataframe,
-        Data to be searched
-    interval_min_day: float,
-        Minimum number of days needed for training
-    interval_max_day: float,
-        Maximum number of days needed for training        
+    df: data to be searched.
+    step_min: minimum number of steps needed for training. 
+    step_max: maximum number of steps needed for training.
+        (step=sampling_rate/h*24h/day*3day means to calculate the missing rate 3 days backward at each moment.)
+    return:
+        data_valid: valid data try to meet the step_max
     '''
-    pass
+    data = df
+
+    data_valid = None
+    for step in range(step_max, step_min-1, -1):
+        missing_rate, data_mc, ms_results = cal_missing_rate(data, sampling_time, step, ms_thresh)
+        if data_mc is not None:
+            data_valid = data_mc
+            for key, value in ms_results.items():
+                if key == 'closest_time_multi':
+                    print(f'{label}, the closest moment meets the condition (missing rate < {ms_thresh}, {step/sampling_rate/24} days) \
+                        for multiple data: ', ms_results['closest_time_multi'], '\n------------------\n\n')
+                else: print(f'{key} {label}, the closest optimal moment to the present: ', value, '\n------------------')
+            if plot:
+                data.plot(title=f'Measurement data ({label})', figsize=(12,6))
+                plt.legend(loc = 'upper left')
+                missing_rate.plot(title=f'Missing Rate ({step} steps backward) ({label})', figsize=(12,6))
+                plt.legend(loc = 'upper left')
+                data_mc.plot(title=f'Data meets condition (missing rate < {ms_thresh}) ({step/sampling_rate/24} days) ({label})', figsize=(12,6))
+                plt.legend(loc = 'upper left')
+                plt.show()
+            break
+        if data_mc is None and step==step_min:
+            print(f'{label}, there is no moment meets the condition (missing rate < {ms_thresh}) for multiple data.', '\n------------------\n\n')
+
+    return data_valid
+
+def cal_missing_rate(df:pd.DataFrame, sampling_time:pd.Timedelta, step:int, ms_thresh:float, **kw) -> (pd.DataFrame, pd.DataFrame, dict):
+    '''
+    return:
+        missing_rate: missing rate of data.
+        data_mc: the closest data meets the condition (missing rate < ms_thresh) for multivariable.
+        ms_results: the closest optimal time for univariable, the closest time meets the condition (missing rate < ms_thresh) for multivariable.
+    '''
+    data = df
+
+    missing_rate = pd.DataFrame(data=None, index=data.index, columns=data.columns)
+    data_mc = None
+    ms_results = {}
+
+    for col in data.columns:
+        missing_rate[col] = 1 - (data[col].rolling(step, min_periods=0).count() / float(step))
+    for col in data.columns:
+        # 获取具有最小missing_rate的所有时刻
+        min_index = np.where(missing_rate[col] == missing_rate[col].min())
+        # 获得具有最小missing_rate的最近的时刻
+        best_time = missing_rate[col].iloc[min_index[0]].tail(1).index
+        ms_results[col] = best_time.strftime('%Y-%m-%d %H:%M:00')[0] + ' (minimum missing rate: ' + str(missing_rate[col].min()) + ')'
+    # 当包含多组数据时
+    if len(data.columns) > 1:
+        # 获取每一行数据的missing_rate都小于ms_thresh的所有数据
+        ms_multi = missing_rate[missing_rate <= ms_thresh]
+        ms_multi = ms_multi.dropna()
+        # 所有数据满足距离当前时间段最近的3天缺失率低于ms_thresh的时刻
+        closest_time = ms_multi.tail(1).index            
+        if any(closest_time):
+            ms_results['closest_time_multi'] = closest_time.strftime('%Y-%m-%d %H:%M:00')[0]
+            # 获取满足条件的多通道数据
+            closest_time_back = closest_time - sampling_time*step
+            data_mc = data[closest_time_back.strftime('%Y-%m-%d %H:%M:00')[0]: closest_time.strftime('%Y-%m-%d %H:%M:00')[0]]
+
+    return missing_rate, data_mc, ms_results
 
 
 #%% outlier detection functions
@@ -205,8 +205,8 @@ def od_boxplot(df:pd.DataFrame, win_size:int, thresh=3, remove_outlier=True, plo
     '''
     remove outliers by boxplot (univariable).
     return:
-        pd.DataFrame: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
-        list: outliers' indexes of original data.
+        data: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
+        outlier_indexes: outliers' indexes of original data.
     '''
     data = copy.deepcopy(df)
     
@@ -239,8 +239,8 @@ def od_sigma(df:pd.DataFrame, win_size: int, thresh=3, remove_outlier=True, plot
     '''
     remove outliers by n-sigma (univariable), data should follow normal distribution.
     return:
-        pd.DataFrame: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
-        list: outliers' indexes of original data.
+        data: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
+        outlier_indexes: outliers' indexes of original data.
     '''
     data = copy.deepcopy(df)
 
@@ -270,8 +270,8 @@ def od_KD(df:pd.DataFrame, remove_outlier=True, plot=False, **kw) -> (pd.DataFra
     '''
     remove outliers by Kernal Density (univariable).
     return:
-        pd.DataFrame: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
-        list: outliers' indexes of original data.
+        data: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
+        outlier_indexes: outliers' indexes of original data.
     '''
     from sklearn.neighbors import KernelDensity
     data = copy.deepcopy(df)
@@ -301,8 +301,8 @@ def od_IF(df:pd.DataFrame, remove_outlier=True, plot=False, **kw) -> (pd.DataFra
     '''
     remove outliers by Isolation Forest (univariable).
     return:
-        pd.DataFrame: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
-        list: outliers' indexes of original data.
+        data: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
+        outlier_indexes: outliers' indexes of original data.
     '''
     from sklearn.ensemble import IsolationForest
     data = copy.deepcopy(df)
@@ -330,8 +330,8 @@ def od_IF_multi(df:pd.DataFrame, remove_outlier=True, plot=False, **kw) -> (pd.D
     '''
     remove outliers by Isolation Forest (multivariable).
     return:
-        pd.DataFrame: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
-        list: outliers' index of original data.
+        data: data removed outliers (remove_outlier=True) / original data (remove_outlier=False).
+        outlier_index: outliers' index of original data.
     '''
     from sklearn.ensemble import IsolationForest
 
@@ -358,7 +358,7 @@ def impute_linear(df:pd.DataFrame, sampling_time:pd.Timedelta, linear_time_delta
     '''
     impute data by linear interpolation (univariable).
     return:
-        pd.DataFrame: data imputed.
+        data: data imputed.
     '''
     data = copy.deepcopy(df)
 
@@ -400,7 +400,7 @@ def impute_KNN(df:pd.DataFrame, plot=False, **kw) -> pd.DataFrame:
     '''
     impute data by K-Nearest Neighbor (multivariable).
     return:
-        pd.DataFrame: data imputed.
+        data: data imputed.
     '''
     from sklearn.impute import KNNImputer
 
@@ -420,7 +420,7 @@ def impute_MICE(df:pd.DataFrame, plot=False, **kw) -> pd.DataFrame:
     '''
     impute data by MICE (multivariable).
     return:
-        pd.DataFrame: data imputed.
+        data: data imputed.
     '''
     data = copy.deepcopy(df)
 
@@ -431,11 +431,12 @@ def impute_MICE(df:pd.DataFrame, plot=False, **kw) -> pd.DataFrame:
 
     return data
 
+
 # for col in self.data_impute.columns:
-        #     if self.column_type[col] == 'T_amb':
-        #     elif self.column_type[col] == 'T_sys':
-        #     elif self.column_type[col] == 'Sys':
-        #     elif self.column_type[col] == 'Meter':
-        #     elif self.column_type[col] == 'Other':
-        #     else:
-        #         assert False, "Specify the column type for each column, valid types are: 'T_amb', 'T_sys', 'Sys', 'Meter', 'Other'."
+#     if self.column_type[col] == 'T_amb':
+#     elif self.column_type[col] == 'T_sys':
+#     elif self.column_type[col] == 'Sys':
+#     elif self.column_type[col] == 'Meter':
+#     elif self.column_type[col] == 'Other':
+#     else:
+#         assert False, "Specify the column type for each column, valid types are: 'T_amb', 'T_sys', 'Sys', 'Meter', 'Other'."
