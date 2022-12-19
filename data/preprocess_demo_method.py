@@ -57,16 +57,20 @@ column_type = {
     'e3': 'T_amb',
     'roomTemp': 'T_amb'
 }
-# data['E'] = data['E'].diff()
-data
 
+#%% Recommended to interpolate the meter data before differentiating
+data['E'], _ = preprocess.od_boxplot(data['E'].to_frame(), win_size=4*24*3, remove_outlier=True)
+data['E'] = preprocess.impute_linear(data['E'].to_frame(), pd.Timedelta('15 min'), pd.Timedelta('12 hour'))
+data['E'] = data['E'].diff()
+data
 
 
 # outlier detection test
 #%% od_boxplot, od_sigma
-win_size = 4*24*3
-data_rmol, outlier_indexes = preprocess.od_boxplot(data, win_size=win_size, remove_outlier=True, plot=True)
-# data_rmol, outlier_indexes = preprocess.od_sigma(data, win_size=win_size, remove_outlier=True, plot=True)
+win_size_boxplot = 4*24*3
+win_size_sigma = 4*24*60
+# data_rmol, outlier_indexes = preprocess.od_boxplot(data, win_size=win_size_boxplot, remove_outlier=True, plot=True)
+data_rmol, outlier_indexes = preprocess.od_sigma(data, win_size=win_size_sigma, remove_outlier=True, plot=True)
 
 subplot_num = len(data_rmol.columns)
 for col, i in zip(data_rmol.columns, range(subplot_num)):
@@ -127,28 +131,37 @@ plt.show()
 
 
 #%% impute_KNN
-data_impute = preprocess.impute_KNN(data_rmol, plot=True)
+# data_impute = preprocess.impute_KNN(data_rmol, plot=True)
+
+# subplot_num = len(data_impute.columns)
+# for col, i in zip(data_impute.columns, range(subplot_num)):
+#     plt.subplot(subplot_num, 1, i+1)
+#     plt.plot(data_impute[col].index, data_impute[col])
+#     plt.plot(data_rmol[col].index, data_rmol[col])
+#     plt.legend([col+'_impute_KNN', col+'_rmol'], loc = 'upper left')
+# plt.gcf().set_size_inches(12, 6)
+# plt.show()
+
+
+#%% impute_MICE
+# data_valid_train = preprocess.valid_data(data_rmol, step_min=4*24*7, step_max=4*24*28, \
+#     sampling_time=pd.Timedelta('15 min'), sampling_rate=4, ms_thresh=0.005, label='remove_outlier', plot=True)
+data_valid_test = preprocess.valid_data(data_rmol, step_min=4*24*3, step_max=4*24*7, \
+    sampling_time=pd.Timedelta('15 min'), sampling_rate=4, ms_thresh=0.3, label='remove_outlier', plot=True)
+data_valid_train = data_rmol
+# data_valid_test = data_rmol
+
+data_impute = preprocess.impute_MICE(data_valid_train, data_valid_test, plot=True)
 
 subplot_num = len(data_impute.columns)
 for col, i in zip(data_impute.columns, range(subplot_num)):
     plt.subplot(subplot_num, 1, i+1)
     plt.plot(data_impute[col].index, data_impute[col])
-    plt.plot(data_rmol[col].index, data_rmol[col])
-    plt.legend([col+'_impute_KNN', col+'_rmol'], loc = 'upper left')
+    plt.plot(data_valid_test[col].index, data_valid_test[col])
+    plt.legend([col+'_impute_MICE', col+'_rmol'], loc = 'upper left')
 plt.gcf().set_size_inches(12, 6)
 plt.show()
 
 
-#%% impute_MICE
-import numpy as np
-from sklearn.experimental import enable_iterative_imputer
-from sklearn.impute import IterativeImputer
-imp = IterativeImputer(max_iter=10, random_state=0)
-imp.fit([[1, 2], [3, 6], [4, 8], [np.nan, 3], [7, np.nan]])
-IterativeImputer(random_state=0)
-
-X_test = [[np.nan, 2], [6, np.nan], [np.nan, 6]]
-# the model learns that the second feature is double the first
-print(np.round(imp.transform(X_test)))
 
 #%%

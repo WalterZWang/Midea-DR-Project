@@ -34,7 +34,7 @@ for key1, value1 in data_required.items():
             params_temp = {
                 'measurement_name': key2,
                 'start_time': pd.to_datetime('2022-07-01 00:00:00'),
-                'end_time': pd.to_datetime('2022-10-01 00:00:00'),
+                'end_time': pd.to_datetime('2022-11-01 00:00:00'),
                 'field_list': value2['field_list'],
                 'tag_dict': value2['tag_dict'],
                 'fore': False,
@@ -73,19 +73,20 @@ params = {
     'sampling_rate': 4,   # 4 times per hour, depends on sampling_time.
 
     # parameters of remove outliers
-    'win_size': 4*24*7,   # win_size=sampling_rate/h*24h/day*7day, time window size of remove outliers (boxplot, 3-sigma).
+    'win_size_boxplot': 4*24*7,   # win_size=sampling_rate/h*24h/day*7day, time window size of remove outliers.
+    'win_size_sigma': 4*24*60,
     # parameters of data imputation
     'linear_time_delta': pd.Timedelta('4 hours'),   # data missing for more than consecutive linear_time_delta will not be linear imputation.
 
     # parameters of obtain valid data (by calculating missing rate)
-    'ms_thresh': 0.1,   # the condition of missing rate (< ms_thresh) for multiple data.
-    'step_min': 4*24*2,   # minimum number of steps needed for training. step=sampling_rate/h*24h/day*2day means to calculate the missing rate 2 days backward at each moment.
-    'step_max': 4*24*7,   # maximum number of steps needed for training.
+    'ms_thresh': 0.2,   # the condition of missing rate (< ms_thresh) for multiple data.
+    'step_min': 4*24*10,   # minimum number of steps needed for training. step=sampling_rate/h*24h/day*2day means to calculate the missing rate 2 days backward at each moment.
+    'step_max': 4*24*30,   # maximum number of steps needed for training.
     # 'gap_max': pd.Timedelta('4 hours'),
 }
 
 prepro = preprocess.DataPreprocess(data=data, column_type=column_type, **params)
-prepro.process(oldt_method='boxplot', impute_method='linear')
+prepro.process(oldt_method=None, impute_method=None)
 
 # prepro.outlier_detect(method='boxplot')
 # prepro.impute(method='linear')
@@ -93,6 +94,7 @@ prepro.process(oldt_method='boxplot', impute_method='linear')
 
 #%% Obtain valid data
 data_valid = preprocess.valid_data(prepro.data, label='original', plot=True, **params)
+data_valid = preprocess.valid_data(prepro.data_rmol, label='remove_outlier', plot=True, **params)
 data_valid = preprocess.valid_data(prepro.data_impute, label='imputation', plot=True, **params)
 
 

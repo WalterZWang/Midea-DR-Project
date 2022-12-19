@@ -27,7 +27,8 @@ class DataPreprocess(object):
     sampling_time = pd.Timedelta('15 min')
     sampling_rate = 4   # 4 times per hour, depends on sampling time
     # parameters of outlier detect
-    win_size = None   # time window size of remove outliers, 'None' means 'win_size == time period for all data'
+    win_size_boxplot = None   # time window size of remove outliers, 'None' means 'win_size == time period for all data'
+    win_size_sigma = None   # time window size of remove outliers, 'None' means 'win_size == time period for all data'
     # parameters of data imputation
     linear_time_delta = pd.Timedelta('6 hours')   # data missing for more than consecutive linear_time_delta will not be linear imputation
     
@@ -54,10 +55,13 @@ class DataPreprocess(object):
 
         if 'sampling_time' in kw: self.sampling_time = kw['sampling_time']
         if 'sampling_rate' in kw: self.sampling_rate = kw['sampling_rate'] 
-        if 'win_size' in kw: self.win_size = kw['win_size'] 
+
+        if 'win_size_boxplot' in kw: self.win_size_boxplot = kw['win_size_boxplot'] 
+        if 'win_size_sigma' in kw: self.win_size_sigma = kw['win_size_sigma'] 
+
         if 'linear_time_delta' in kw: self.linear_time_delta = kw['linear_time_delta']
 
-    def outlier_detect(self, method='boxplot', remove_outlier=True, **kw) -> None:
+    def outlier_detect(self, method=None, remove_outlier=True, **kw) -> None:
         '''
         method = ['boxplot', '3-sigma', 'kernal_density', 'isolation_forest']
         '''
@@ -65,48 +69,76 @@ class DataPreprocess(object):
         assert self.data_rmol is not None, "Plese verify the original data is not empty."
         self.data_rmol = od_negative(self.data_rmol, self.column_type)
 
-        if method == 'boxplot':
-            win_size = self.win_size
-            self.data_rmol, _ = od_boxplot(self.data_rmol, win_size, remove_outlier)
+        win_size_boxplot = self.win_size_boxplot
+        win_size_sigma = self.win_size_sigma
 
+        if method is None:
+            for col in self.data_rmol.columns:
+                if self.column_type[col] == 'T_amb':
+                    self.data_rmol[col], _ = od_boxplot(self.data_rmol[col].to_frame(), win_size_boxplot, remove_outlier)
+                elif self.column_type[col] == 'T_sys':
+                    self.data_rmol[col], _ = od_boxplot(self.data_rmol[col].to_frame(), win_size_boxplot, remove_outlier)
+                elif self.column_type[col] == 'Sys':
+                    self.data_rmol[col], _ = od_boxplot(self.data_rmol[col].to_frame(), win_size_boxplot, remove_outlier)
+                elif self.column_type[col] == 'Meter':
+                    self.data_rmol[col], _ = od_sigma(self.data_rmol[col].to_frame(), win_size_sigma, remove_outlier)
+                elif self.column_type[col] == 'Other':
+                    self.data_rmol[col], _ = od_boxplot(self.data_rmol[col].to_frame(), win_size_boxplot, remove_outlier)
+                else:
+                    assert False, "Specify the column type for each column, valid types are: 'T_amb', 'T_sys', 'Sys', 'Meter', 'Other'."
+
+        elif method == 'boxplot':
+            self.data_rmol, _ = od_boxplot(self.data_rmol, win_size_boxplot, remove_outlier)
         elif method == '3-sigma':
-            win_size = self.win_size
-            self.data_rmol, _ = od_sigma(self.data_rmol, win_size, remove_outlier)
-
+            self.data_rmol, _ = od_sigma(self.data_rmol, win_size_sigma, remove_outlier)
         elif method == 'kernal_density':
             self.data_rmol, _ = od_KD(self.data_rmol, remove_outlier)
-
         elif method == 'isolation_forest':
             self.data_rmol, _ = od_IF(self.data_rmol, remove_outlier)
 
         else: assert False, "Please enter the correct method: 'boxplot', '3-sigma', 'kernal_density', 'isolation_forest'."
 
-    def impute(self, method='linear', **kw) -> None:
+    def impute(self, method=None, **kw) -> None:
         '''
-        method = ['linear', 'KNN']
+        method = ['linear', 'KNN', 'MICE']
         '''
         if self.data_rmol is not None: self.data_impute = copy.deepcopy(self.data_rmol)
         else: self.data_impute = copy.deepcopy(self.data)
         assert self.data_impute is not None, "Plese verify the original data is not empty."
 
-        if method == 'linear':
-            sampling_time = self.sampling_time
-            linear_time_delta = self.linear_time_delta
+        sampling_time = self.sampling_time
+        linear_time_delta = self.linear_time_delta
+
+        if method is None:
+            for col in self.data_rmol.columns:
+                if self.column_type[col] == 'T_amb':
+                    self.data_impute[col] = impute_linear(df=self.data_impute[col].to_frame(), sampling_time=sampling_time, linear_time_delta=linear_time_delta)
+                elif self.column_type[col] == 'T_sys':
+                    self.data_impute[col] = impute_linear(df=self.data_impute[col].to_frame(), sampling_time=sampling_time, linear_time_delta=linear_time_delta)
+                elif self.column_type[col] == 'Sys':  # Discrete value like 0-1 would not be imputed
+                    continue  
+                elif self.column_type[col] == 'Meter':
+                    self.data_impute[col] = impute_linear(df=self.data_impute[col].to_frame(), sampling_time=sampling_time, linear_time_delta=linear_time_delta)
+                elif self.column_type[col] == 'Other':
+                    self.data_impute[col] = impute_linear(df=self.data_impute[col].to_frame(), sampling_time=sampling_time, linear_time_delta=linear_time_delta)
+                else:
+                    assert False, "Specify the column type for each column, valid types are: 'T_amb', 'T_sys', 'Sys', 'Meter', 'Other'."
+
+        elif method == 'linear':
             for col in self.data_impute.columns:
-                if self.column_type[col] == 'Sys': continue   # Discrete value like 0-1 would not be imputed
-                self.data_impute[col] = \
-                    impute_linear(df=self.data_impute[col].to_frame(), sampling_time=sampling_time, linear_time_delta=linear_time_delta)
+                if self.column_type[col] == 'Sys': continue   
+                self.data_impute[col] = impute_linear(df=self.data_impute[col].to_frame(), sampling_time=sampling_time, linear_time_delta=linear_time_delta)
 
         elif method == 'KNN':
+            self.data_impute = impute_KNN(df=self.data_impute)
+        elif method == 'MICE':
             pass
-        elif method == '':
-            pass
-        else: assert False, "Please enter the correct method: 'linear', 'KNN'."
+        else: assert False, "Please enter the correct method: 'linear', 'KNN', 'MICE'."
 
-    def process(self, oldt_method='boxplot', impute_method='linear') -> None:
+    def process(self, oldt_method=None, impute_method=None) -> None:
         '''
         oldt_method = ['boxplot', '3-sigma', 'kernal_density', 'isolation_forest'].
-        impute_method = ['linear', 'KNN'].
+        impute_method = ['linear', 'KNN', 'MICE'].
         '''
         self.outlier_detect(method=oldt_method, remove_outlier=True)
         self.impute(method=impute_method)
@@ -116,8 +148,8 @@ class DataPreprocess(object):
 
 
 #%% identify the valid data set for training
-def valid_data(df:pd.DataFrame, sampling_time:pd.Timedelta, sampling_rate:float, \
-    step_min:int, step_max:int, ms_thresh=0.2, label='original', plot=False, **kw) -> pd.DataFrame:
+def valid_data(df:pd.DataFrame, step_min:int, step_max:int, \
+    sampling_time:pd.Timedelta, sampling_rate:float, ms_thresh=0.2, label='original', plot=False, **kw) -> pd.DataFrame:
     '''
     df: data to be searched.
     step_min: minimum number of steps needed for training. 
@@ -135,7 +167,7 @@ def valid_data(df:pd.DataFrame, sampling_time:pd.Timedelta, sampling_rate:float,
             data_valid = data_mc
             for key, value in ms_results.items():
                 if key == 'closest_time_multi':
-                    print(f'{label}, the closest moment meets the condition (missing rate < {ms_thresh}, {step/sampling_rate/24} days) \
+                    print(f'{label}, the closest moment meets the condition (missing rate < {ms_thresh}, {round(step/sampling_rate/24, 2)} days) \
                         for multiple data: ', ms_results['closest_time_multi'], '\n------------------\n\n')
                 else: print(f'{key} {label}, the closest optimal moment to the present: ', value, '\n------------------')
             if plot:
@@ -143,12 +175,12 @@ def valid_data(df:pd.DataFrame, sampling_time:pd.Timedelta, sampling_rate:float,
                 plt.legend(loc = 'upper left')
                 missing_rate.plot(title=f'Missing Rate ({step} steps backward) ({label})', figsize=(12,6))
                 plt.legend(loc = 'upper left')
-                data_mc.plot(title=f'Data meets condition (missing rate < {ms_thresh}) ({step/sampling_rate/24} days) ({label})', figsize=(12,6))
+                data_mc.plot(title=f'Data meets condition (missing rate < {ms_thresh}, {round(step/sampling_rate/24, 2)} days) ({label})', figsize=(12,6))
                 plt.legend(loc = 'upper left')
                 plt.show()
             break
         if data_mc is None and step==step_min:
-            print(f'{label}, there is no moment meets the condition (missing rate < {ms_thresh}) for multiple data.', '\n------------------\n\n')
+            print(f'{label}, there is no moment meets the condition (missing rate < {ms_thresh}, {round(step_min/sampling_rate/24, 2)} days) for multiple data.', '\n------------------\n\n')
 
     return data_valid
 
@@ -192,16 +224,16 @@ def cal_missing_rate(df:pd.DataFrame, sampling_time:pd.Timedelta, step:int, ms_t
 #%% outlier detection functions
 def od_negative(df:pd.DataFrame, column_type:dict, **kw) -> pd.DataFrame:
     '''
-    remove negative.
+    remove negative for data of specific column type.
     '''
     data = copy.deepcopy(df)
     for col in data.columns:
-        if column_type[col] == 'Meter': 
+        if column_type[col] in ['Meter']: 
             data[col].loc[data[col] < 0]  = np.nan
 
     return data
 
-def od_boxplot(df:pd.DataFrame, win_size:int, thresh=3, remove_outlier=True, plot=False, **kw) -> (pd.DataFrame, list):
+def od_boxplot(df:pd.DataFrame, win_size:int, thresh=4, remove_outlier=True, plot=False, **kw) -> (pd.DataFrame, list):
     '''
     remove outliers by boxplot (univariable).
     return:
@@ -406,8 +438,8 @@ def impute_KNN(df:pd.DataFrame, plot=False, **kw) -> pd.DataFrame:
 
     data = copy.deepcopy(df)
 
-    imputer = KNNImputer(n_neighbors=5, weights="uniform")
-    data = pd.DataFrame(data=imputer.fit_transform(data), index=df.index, columns=df.columns, dtype='float')
+    imp = KNNImputer(n_neighbors=5, weights="uniform")
+    data = pd.DataFrame(data=imp.fit_transform(data), index=df.index, columns=df.columns, dtype='float')
 
     if plot:
         df.plot(subplots=True, title=f'Measurement data (original)')
@@ -416,27 +448,27 @@ def impute_KNN(df:pd.DataFrame, plot=False, **kw) -> pd.DataFrame:
 
     return data
 
-def impute_MICE(df:pd.DataFrame, plot=False, **kw) -> pd.DataFrame:
+def impute_MICE(train:pd.DataFrame, test:pd.DataFrame, plot=False, **kw) -> pd.DataFrame:
     '''
     impute data by MICE (multivariable).
     return:
-        data: data imputed.
+        data: test data imputed.
     '''
-    data = copy.deepcopy(df)
+    from sklearn.experimental import enable_iterative_imputer
+    from sklearn.impute import IterativeImputer
+
+    data_train = copy.deepcopy(train).dropna()
+    data_test = copy.deepcopy(test)
+
+    imp = IterativeImputer(max_iter=10, random_state=0)
+    imp.fit(data_train)
+    IterativeImputer(random_state=0)
+    data = pd.DataFrame(data=imp.transform(data_test), index=test.index, columns=test.columns, dtype='float')
 
     if plot:
-        df.plot(subplots=True, title=f'Measurement data (original)')
+        data_train.plot(subplots=True, title=f'Measurement data (train)')
+        data_test.plot(subplots=True, title=f'Measurement data (original)')
         data.plot(subplots=True, title=f'Measurement data (imputation_MICE)')
         plt.show()
 
     return data
-
-
-# for col in self.data_impute.columns:
-#     if self.column_type[col] == 'T_amb':
-#     elif self.column_type[col] == 'T_sys':
-#     elif self.column_type[col] == 'Sys':
-#     elif self.column_type[col] == 'Meter':
-#     elif self.column_type[col] == 'Other':
-#     else:
-#         assert False, "Specify the column type for each column, valid types are: 'T_amb', 'T_sys', 'Sys', 'Meter', 'Other'."
