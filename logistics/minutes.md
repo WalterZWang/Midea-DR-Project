@@ -76,3 +76,21 @@
 #### Dan
 - Another version of open loop control, start at 0:00 AM every morning, do a 24 hour optimization without replanning
 - Standardize the workflow and structure, make it also suitable for other VRFs
+
+## 2022-12-20
+### Discussion
+- Dan introduced the difference between optimal control problem (OCP, no real-time feedback and re-planning) and model predictive control (MPC), in many cases the temperature is out of control
+- Zhenyu introduced the code of selecting the usable data (no missing rate) for training
+
+### Next steps
+#### Zhenyu
+- Revise the parameters of ``valid_data``
+- Continue the outlier detection and missing data imputation work as described [above](#2022-12-13)
+#### Wanfu
+- Continue the work as described [above](#2022-12-13)
+- Revise the MPC-RL paper
+#### Dan
+- Explore the difference between OCP and MPC
+- Revise the MPC-RL paper
+#### Mingchen & Dajun
+- Explore the VRF model
