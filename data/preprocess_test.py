@@ -7,7 +7,7 @@ from Influxdb_API.Influxdb_API import ClientInfluxdb
 import preprocess
 
 
-#%% Use the influxdb_API to get data
+#%% 1. Obtain orignal data by influxdb_API
 data_required = {
     'moserveribms': {
         'ibmsV2modata': {
@@ -34,7 +34,7 @@ for key1, value1 in data_required.items():
             params_temp = {
                 'measurement_name': key2,
                 'start_time': pd.to_datetime('2022-07-01 00:00:00'),
-                'end_time': pd.to_datetime('2022-10-01 00:00:00'),
+                'end_time': pd.to_datetime('2022-11-01 00:00:00'),
                 'field_list': value2['field_list'],
                 'tag_dict': value2['tag_dict'],
                 'fore': False,
@@ -58,11 +58,56 @@ column_type = {
     'roomTemp': 'T_amb'
 }
 
-#%% Recommended to interpolate the meter data before differentiating
+#%% Recommended to interpolate the meter data before differencing
 data['E'], _ = preprocess.od_boxplot(data['E'].to_frame(), win_size=4*24*3, remove_outlier=True)
 data['E'] = preprocess.impute_linear(data['E'].to_frame(), pd.Timedelta('15 min'), pd.Timedelta('12 hour'))
 data['E'] = data['E'].diff()
 data
+
+
+#%% 2. Preprocess data
+params = {
+    # common parameters
+    'sampling_time': pd.Timedelta('15 min'),
+    'sampling_rate': 4,   # 4 times per hour, depends on sampling_time.
+
+    # parameters of remove outliers
+    'win_size_boxplot': 4*24*7,   # win_size_boxplot=sampling_rate/h*24h/day*7day, time window size of remove outliers by boxplot.
+    'win_size_sigma': 4*24*60,   # win_size_sigma=sampling_rate/h*24h/day*60day, time window size of remove outliers by 3-sigma.
+    # parameters of data imputation
+    'linear_time_delta': pd.Timedelta('4 hours'),   # data missing for more than consecutive linear_time_delta will not be linear imputation.
+
+    # parameters of obtain valid data (by calculating missing rate)
+    'ms_thresh': 0.0,   # the condition of missing rate (< ms_thresh) for multiple data.
+    'interval_min_day': 2,   # minimum number of days needed for training.
+    'interval_max_day': 10,   # maximum number of days needed for training.
+    # 'gap_max': pd.Timedelta('4 hours'),
+}
+
+prepro = preprocess.DataPreprocess(data=data, column_type=column_type, **params)
+prepro.process(oldt_method=None, impute_method=None)
+
+# prepro.outlier_detect(method='boxplot')
+# prepro.impute(method='linear')
+
+
+#%% 3. Obtain valid data
+# data_valid = preprocess.valid_data(prepro.data, label='original', plot=True, **params)
+# data_valid = preprocess.valid_data(prepro.data_rmol, label='remove_outlier', plot=True, **params)
+data_valid = preprocess.valid_data(prepro.data_impute, label='imputation', plot=True, **params)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # outlier detection test
@@ -144,11 +189,11 @@ plt.show()
 
 
 #%% impute_MICE
-# data_valid_train = preprocess.valid_data(data_rmol, step_min=4*24*7, step_max=4*24*28, \
-#     sampling_time=pd.Timedelta('15 min'), sampling_rate=4, ms_thresh=0.005, label='remove_outlier', plot=True)
+data_valid_train = preprocess.valid_data(data_rmol, step_min=4*24*7, step_max=4*24*28, \
+    sampling_time=pd.Timedelta('15 min'), sampling_rate=4, ms_thresh=0.005, label='remove_outlier', plot=True)
 data_valid_test = preprocess.valid_data(data_rmol, step_min=4*24*3, step_max=4*24*7, \
     sampling_time=pd.Timedelta('15 min'), sampling_rate=4, ms_thresh=0.3, label='remove_outlier', plot=True)
-data_valid_train = data_rmol
+# data_valid_train = data_rmol
 # data_valid_test = data_rmol
 
 data_impute = preprocess.impute_MICE(data_valid_train, data_valid_test, plot=True)
@@ -161,7 +206,3 @@ for col, i in zip(data_impute.columns, range(subplot_num)):
     plt.legend([col+'_impute_MICE', col+'_rmol'], loc = 'upper left')
 plt.gcf().set_size_inches(12, 6)
 plt.show()
-
-
-
-#%%

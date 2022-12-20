@@ -148,39 +148,43 @@ class DataPreprocess(object):
 
 
 #%% identify the valid data set for training
-def valid_data(df:pd.DataFrame, step_min:int, step_max:int, \
-    sampling_time:pd.Timedelta, sampling_rate:float, ms_thresh=0.2, label='original', plot=False, **kw) -> pd.DataFrame:
+def valid_data(df:pd.DataFrame, interval_min_day:float, interval_max_day:float, \
+    sampling_time:pd.Timedelta, sampling_rate:float, ms_thresh=0.0, label='original', plot=False, **kw) -> pd.DataFrame:
     '''
     df: data to be searched.
-    step_min: minimum number of steps needed for training. 
-    step_max: maximum number of steps needed for training.
-        (step=sampling_rate/h*24h/day*3day means to calculate the missing rate 3 days backward at each moment.)
+    interval_min_day: minimum number of days needed for training. 
+    interval_max_day: maximum number of days needed for training.
     return:
-        data_valid: valid data try to meet the step_max
+        data_valid: valid data try to meet the interval_max_day
     '''
     data = df
 
+    # step = sampling_rate/h*24h/day*ndays means to calculate the missing rate n days backward at each moment
+    step_min = sampling_rate*24*interval_min_day
+    step_max = sampling_rate*24*interval_max_day
+
+    # from step_max to step_min, if have multiple data meets the ms_thresh, break and return.
     data_valid = None
     for step in range(step_max, step_min-1, -1):
         missing_rate, data_mc, ms_results = cal_missing_rate(data, sampling_time, step, ms_thresh)
         if data_mc is not None:
             data_valid = data_mc
+            days_backward = round(step/sampling_rate/24, 2)
             for key, value in ms_results.items():
                 if key == 'closest_time_multi':
-                    print(f'{label}, the closest moment meets the condition (missing rate < {ms_thresh}, {round(step/sampling_rate/24, 2)} days) \
-                        for multiple data: ', ms_results['closest_time_multi'], '\n------------------\n\n')
+                    print(f'{label}, the closest moment meets the condition (missing rate <= {ms_thresh}, {days_backward} days) for multiple data: ', ms_results['closest_time_multi'], '\n------------------\n\n')
                 else: print(f'{key} {label}, the closest optimal moment to the present: ', value, '\n------------------')
             if plot:
                 data.plot(title=f'Measurement data ({label})', figsize=(12,6))
                 plt.legend(loc = 'upper left')
-                missing_rate.plot(title=f'Missing Rate ({step} steps backward) ({label})', figsize=(12,6))
+                missing_rate.plot(title=f'Missing Rate ({days_backward} days backward) ({label})', figsize=(12,6))
                 plt.legend(loc = 'upper left')
-                data_mc.plot(title=f'Data meets condition (missing rate < {ms_thresh}, {round(step/sampling_rate/24, 2)} days) ({label})', figsize=(12,6))
+                data_mc.plot(title=f'Data meets condition (missing rate <= {ms_thresh}, {days_backward} days backward) ({label})', figsize=(12,6))
                 plt.legend(loc = 'upper left')
                 plt.show()
             break
         if data_mc is None and step==step_min:
-            print(f'{label}, there is no moment meets the condition (missing rate < {ms_thresh}, {round(step_min/sampling_rate/24, 2)} days) for multiple data.', '\n------------------\n\n')
+            print(f'{label}, there is no moment meets the condition (missing rate <= {ms_thresh}, {interval_min_day} days backward) for multiple data.', '\n------------------\n\n')
 
     return data_valid
 
@@ -188,8 +192,8 @@ def cal_missing_rate(df:pd.DataFrame, sampling_time:pd.Timedelta, step:int, ms_t
     '''
     return:
         missing_rate: missing rate of data.
-        data_mc: the closest data meets the condition (missing rate < ms_thresh) for multivariable.
-        ms_results: the closest optimal time for univariable, the closest time meets the condition (missing rate < ms_thresh) for multivariable.
+        data_mc: the closest data meets the condition (missing rate <= ms_thresh) for multivariable.
+        ms_results: the closest optimal time for univariable, the closest time meets the condition (missing rate <= ms_thresh) for multivariable.
     '''
     data = df
 
