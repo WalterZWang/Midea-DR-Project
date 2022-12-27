@@ -127,3 +127,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# data preprocess (zhenyu wang)
+preprocess_test_wzy.py
