@@ -412,9 +412,9 @@ def get_influxDB_main():
     database_vrf ='moserver'
     database_meter ='moserveribms'
     # VRF select
-    start_time = '2022-05-01 00:00:00' # format: '2022-05-01 00:00:00'
-    end_time = '2022-11-23 00:00:00' #format: '2022-10-02 00:00:00'
-    # start time and end time for port 2: August only
+    start_time = '2022-08-01 00:00:00' # format: '2022-05-01 00:00:00'
+    end_time = '2022-09-15 00:00:00' #format: '2022-10-02 00:00:00'
+    # start time and end time for port 1: August only
     start_time2 = None
     end_time2 = None
 
@@ -585,7 +585,7 @@ def get_influxDB_main():
     #%% format data
     data = FormatOriginData(vrf_ids)
     VRF_data_port2 = data.get_vrf_df(df_sys, df_idr, df_odr)
-    VRF_data_port1 = port1.port1_main(start_time2,end_time2, vrf_ids, sys_cos, idr_cos, odr_cos)
+    VRF_data_port1 = port1.port1_main(start_time2, end_time2, vrf_ids, sys_cos, idr_cos, odr_cos)
     VRF_data = data.combine_port(VRF_data_port1, VRF_data_port2)
 
     VRF_data, blg_meter_data, weather_data,\
