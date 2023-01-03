@@ -2,6 +2,7 @@
 
 - [June](#2022-06-15)
 - [Dec.](#2022-12-13)
+- [Jan.](#2023-01-03)
 
 ## 2022-06-15
 ### Agenda
@@ -94,3 +95,26 @@
 - Revise the MPC-RL paper
 #### Mingchen & Dajun
 - Explore the VRF model
+
+## 2022-01-03
+### Next steps
+#### Zhenyu
+- BRICK schema
+    - Prepare a slide to introduce BRICK Schema to the team
+    - Develop a BRICK model for VRF 1K0V
+    - Ultimate goal: use BRICK to simplify the controller development process for other VRFs
+- Data cleaning: outlier detection and missing data imputation
+    - Target is to write a journal article on this
+    - The goal is to proof that after data cleaning, more data is usable and the model accuracy is higher
+#### Wanfu
+- Revise the MPC-RL paper
+- PV prediction using heristic method
+- Implement the cooling capacity calculation code, and deploy it online
+#### Dan
+- Enhance the accuracy of RC model
+- Revise the MPC-RL paper
+#### Mingchen
+- Work on the VRF model
+    - Use Tc and Te collected by the system sensor
+    - Remove data with COP less than 1
+- Write VRF modeling paper, you will be the co-first author
