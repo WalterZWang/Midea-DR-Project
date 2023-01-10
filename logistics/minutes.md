@@ -118,3 +118,24 @@
     - Use Tc and Te collected by the system sensor
     - Remove data with COP less than 1
 - Write VRF modeling paper, you will be the co-first author
+
+## 2022-01-10
+### Next steps
+#### Zhenyu
+- Data cleaning: outlier detection and missing data imputation
+    - Target is to write a journal article on this
+    - The goal is to proof that after data cleaning, more data is usable and the model accuracy is higher
+    - Discuss with Dan if you have any questions on the RC model
+#### Wanfu
+- Revise the MPC-RL paper, send the revised version to Dan by 11:59 PM 12th Jan.
+- Implement the cooling capacity calculation code, and deploy it online, Siqi has shared with you the updated code
+#### Dan
+- Revise the Shenzhen field test paper
+- Revise the MPC-RL paper
+- Continue work on the RL model. I personally think it is fine if R12 is different with R21, because the identified R is very likely not to be the real value of R. If needed, we can schedule a meeting to discuss the RC model
+- Mingyue's code is just a reference. There maybe some bugs, especially for the Kalmane Filter part
+#### Mingchen
+- Work on the VRF model
+    - Develop data-driven model, analyze the fearture importantce
+    - Prepare the slides and discussion points with Midea
+    - Develop a Brick model for the VRF system, which will be included in our paper
