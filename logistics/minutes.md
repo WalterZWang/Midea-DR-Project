@@ -96,7 +96,7 @@
 #### Mingchen & Dajun
 - Explore the VRF model
 
-## 2022-01-03
+## 2023-01-03
 ### Next steps
 #### Zhenyu
 - BRICK schema
@@ -119,7 +119,7 @@
     - Remove data with COP less than 1
 - Write VRF modeling paper, you will be the co-first author
 
-## 2022-01-10
+## 2023-01-10
 ### Next steps
 #### Zhenyu
 - Data cleaning: outlier detection and missing data imputation
@@ -133,9 +133,28 @@
 - Revise the Shenzhen field test paper
 - Revise the MPC-RL paper
 - Continue work on the RL model. I personally think it is fine if R12 is different with R21, because the identified R is very likely not to be the real value of R. If needed, we can schedule a meeting to discuss the RC model
-- Mingyue's code is just a reference. There maybe some bugs, especially for the Kalmane Filter part
+- Mingyue's code is just a reference. There may be some bugs, especially for the Kalman Filter part
 #### Mingchen
 - Work on the VRF model
     - Develop data-driven model, analyze the fearture importantce
     - Prepare the slides and discussion points with Midea
     - Develop a Brick model for the VRF system, which will be included in our paper
+
+## 2023-01-31
+### Next steps
+#### Zhenyu
+#### Zhenyu
+- Find a chuck of data with relatively good quality, share it with Dan by 1st Feb. 23:59.
+- Develop a RC model using this data
+- Schedule a meeting to discuss the RC model in the week (6th-10th Feb.)
+#### Wanfu
+- Calculate the cooling capacity for 1k0V (by 1st Feb. 23:59) and others
+- Deploy the code online
+#### Dan
+- Develop a RC model using the cleaned data
+- Summarize all the questions we have about RC model for the discussion
+#### Mingchen
+- Present the VRF Brick model and workflow this Thursday
+- Continue the work on the VRF paper
+#### Zhe
+- Propose a paper outline for the weather forecast uncertainty paper, share it with Wanfu and Laura
