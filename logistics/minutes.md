@@ -143,7 +143,6 @@
 ## 2023-01-31
 ### Next steps
 #### Zhenyu
-#### Zhenyu
 - Find a chuck of data with relatively good quality, share it with Dan by 1st Feb. 23:59.
 - Develop a RC model using this data
 - Schedule a meeting to discuss the RC model in the week (6th-10th Feb.)
@@ -158,3 +157,36 @@
 - Continue the work on the VRF paper
 #### Zhe
 - Propose a paper outline for the weather forecast uncertainty paper, share it with Wanfu and Laura
+
+## 2023-02-07
+### Next steps
+#### Zhenyu
+- Introduce the outlier detection work this Thursday, add one page to introduce each method you used
+- Think about what metrics can be used to evaluate the outlier detection and missing data imputation work
+    - VRF or RC model accuracy
+    - Numberical experiement: randomly create some outlier or delete some data from a complete dataset (e.g. HKUST campus environmental and energy monitoring data) 
+- The outlier detection and missing data imputation method should be data-specific
+    - For each type of data, which approach is recommended
+    - Any way to embed physical knowledge into this process?
+    - Interpolation (linear or non-linear) can not be applied to non-continuous data (such as cooling load, chiller frequency, etc.)
+- RC Model
+    - To create the clean data, the only imputation method that can be used is linear intepolation for temperature measurement with missing gap less than 2 hours 
+#### Wanfu
+- Introduce the cooling load calculation work this Thursday
+    - Code structure
+    - Result, compared with Siqi's data and influxdb database data
+    - Analyze on the missing rate, and what are the major causes for those missing data
+    - Any other problems to be discussed
+    - Share the slides by Wed. night
+- Continue working on the weather forecast generator for BopTest
+#### Dan
+- RC Model
+    - Remove the data with sudden indoor temperature change
+    - For multiple step forecast, use "minimizing the multiple step forecast error" as the training objective
+    - Summarize all the questions we have about RC model for the discussion
+#### Mingchen
+- Present the VRF modeling work this Thursday
+    - Use all the available data for each model
+    - Share the slides by Wed. night
+#### Zhe
+- Schedule a meeting with Dave to discuss on BopTest
