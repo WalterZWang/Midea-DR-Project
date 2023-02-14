@@ -1,8 +1,7 @@
 # Meeting Notes
 
-- [June](#2022-06-15)
-- [Dec.](#2022-12-13)
-- [Jan.](#2023-01-03)
+- [2022](#2022-06-15)
+- [2023](#2023-01-03)
 
 ## 2022-06-15
 ### Agenda
@@ -190,3 +189,17 @@
     - Share the slides by Wed. night
 #### Zhe
 - Schedule a meeting with Dave to discuss on BopTest
+
+## 2023-02-14
+### Next steps
+#### Zhenyu
+- Present the VRF modeling work this Thursday
+- Package your outlier detection code, pass it to Dan's RC model to validate its performance
+#### Wanfu
+- Learn cvxpy, do the tutorial and exercises
+- Try to implement the algorithms discussed in the MPC lecture
+#### Mingchen
+- Present the VRF modeling work this Thursday
+- Try lightGBM, further improve GBM model
+- Feature importance analysis
+- Paper writing
