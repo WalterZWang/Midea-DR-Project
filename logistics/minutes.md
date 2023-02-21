@@ -203,3 +203,27 @@
 - Try lightGBM, further improve GBM model
 - Feature importance analysis
 - Paper writing
+
+## 2023-02-21
+### Next steps
+#### Zhenyu
+- Present the VRF modeling work this Thursday
+- Test the outlier detection methods on more noisy data points
+- Try the following methods to improve outlier detection performance
+    - Multi-dimension methods (which are correlated, something like feature engineering) 
+    - Combine multiple methods together
+    - Adjust the hyper-parameter
+#### Wanfu
+- Learn cvxpy, do the tutorial and exercises
+    - Try to implement the algorithms discussed in the MPC lecture
+    - Figure out the non convexity, why and how to address, ask your TA/math professors, or attend office hours
+- Weather forecast uncertainty 
+    - Paper
+    - Implement the BopTest
+#### Mingchen
+- Hyper-parameter tuning using the library Wanfu shared
+- Feature importance and temperature selection
+- Paper writing
+#### Dan
+- Learn cvxpy
+- Try to write a tutorial for the 1R1C model
