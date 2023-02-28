@@ -227,3 +227,25 @@
 #### Dan
 - Learn cvxpy
 - Try to write a tutorial for the 1R1C model
+
+
+## 2023-02-28
+### Next steps
+#### Zhenyu
+- Present the VRF modeling work this Thursday
+- Try the following methods to improve outlier detection performance
+    - Try and compare more outlier detection algorithms
+    - Combine multiple methods together, just like ensemble learning
+    - Fix the bug in the hyper-parameter tuning
+- Try the code on other datasets (i.e. other thermal zones)
+#### Wanfu
+- Fix the typo in slides, distinguish the predicted values and measured values 
+    - Compare the two parameter identification approaches, using the correct symbolics
+    - Conduct numerical experiments to compare the two approaches, explain the results using the [bias-variance framework](https://towardsdatascience.com/understanding-the-bias-variance-tradeoff-165e6942b229) 
+- Weather forecast uncertainty 
+    - Paper
+    - Try the higher order model for solar radiation prediction
+    - Implement the BopTest
+#### Mingchen
+- Present the VRF modeling work this Thursday
+- Paper writing
