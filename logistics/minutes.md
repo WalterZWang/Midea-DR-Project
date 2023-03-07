@@ -249,3 +249,24 @@
 #### Mingchen
 - Present the VRF modeling work this Thursday
 - Paper writing
+
+## 2023-03-07
+### Next steps
+#### Zhenyu
+- List the inputs of RC model, specify the maximum missing gap for data imputation for each inputs
+- Re-run the code on all indoor units of 1K0V
+- Plot typical patterns (large RC model errors, incorrect trend, inaccurate data measurements) for discussion
+- Present the VRF modeling work this Thursday, sent me the slide by Wednesday night
+#### Wanfu
+- Calculate the cooling capacity for other VRFs, prepare a slide to show the results this Thursday
+- Weather forecast uncertainty 
+    - Paper
+    - Try two approaches
+        - Link the error with the absolute ground-truth value
+        - Regularize the change rate of error
+    - Prepare a slide for discussion Wed., send me the slide by noon tomorrow
+#### Dan
+- Think about how should we proceed to the whole floor control, discuss the plan with me
+- Revise the VRF paper
+#### Mingchen
+- Package the code, run it on all other VRFs
