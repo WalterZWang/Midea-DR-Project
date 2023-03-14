@@ -270,3 +270,23 @@
 - Revise the VRF paper
 #### Mingchen
 - Package the code, run it on all other VRFs
+
+## 2023-03-14
+### Next steps
+#### Zhenyu
+- Draft a data quality report
+#### Wanfu
+- Prepare a slide to show the results this Thursday
+    - Plot the distribution of exv1opening
+    - Calculate cooling capacity every 1-2 mins, then up-sampling, then do a RC model
+- Weather forecast uncertainty 
+    - Paper
+    - Try two approaches
+        - Link the error with the absolute ground-truth value
+        - Regularize the change rate of error
+    - Prepare a slide for discussion Wed., send me the slide by noon tomorrow
+#### Dan
+- Complete the whole process of MPC using 1K0V as an example, prepare a notebook for demo the next time  
+#### Mingchen
+- Try the Midea online platform
+- Update the Brick model with the rated cooling capacity
