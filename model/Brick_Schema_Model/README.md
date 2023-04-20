@@ -1,5 +1,5 @@
-# Code for the VRF model (Paper Version)
-This code is used to implement the VRF model paper.
+# Code for the Brick Schema
+These codes are used to create and use Brick Schema models.
 
 ## Structure of Code
 
