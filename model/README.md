@@ -6,6 +6,6 @@ Models for VRF and thermal zones
 
 ``Brick_Schema_Model``: Brick Model for VRF system
 
-``previous_version``: old version of data, not used any more
+``previous_version``: old version of code, not used any more
 
 ``VRF_Paper``: Code for the VRF paper (VRF modeling and evaluation)

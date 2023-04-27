@@ -1,6 +1,6 @@
-## model
+## data
 
-Code for unit testing. Test every code before you push it to the repo
+Code for access, evaluate and pre-process teh data.
 
 ## Structure
 
@@ -8,7 +8,7 @@ Code for unit testing. Test every code before you push it to the repo
 
 ``influxdb_API``: API to access, download, and upload data to the influxddb database
 
-``previous_version``: old version of data, not used any more
+``previous_version``: old version of code, not used any more
 
 ``caiyunAPI.py``: API to access and download weather forecast data
 
