@@ -1,0 +1,253 @@
+@prefix bldg: <http://midea_HKUST.com/VRF_1K0V#> .
+@prefix brick: <https://brickschema.org/schema/Brick#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix tag: <https://brickschema.org/schema/BrickTag#> .
+
+bldg:VRF_Outdoor_1K0V a brick:VRF_Outdoor ;
+    brick:feeds bldg:VRF_Indoor_1K0V_0,
+        bldg:VRF_Indoor_1K0V_1,
+        bldg:VRF_Indoor_1K0V_2,
+        bldg:VRF_Indoor_1K0V_3,
+        bldg:VRF_Indoor_1K0V_4,
+        bldg:VRF_Indoor_1K0V_5,
+        bldg:VRF_Indoor_1K0V_6 ;
+    brick:hasPoint bldg:VRF_Outdoor_CompressorFrequency_Sensor,
+        bldg:VRF_Outdoor_CondensingTemperature_Sensor,
+        bldg:VRF_Outdoor_Electrical_Meter,
+        bldg:VRF_Outdoor_EvaporatingTemperature_Sensor,
+        bldg:VRF_Outdoor_FanFrequency_Sensor,
+        bldg:VRF_Outdoor_HighPressure_Sensor,
+        bldg:VRF_Outdoor_LowPressure_Sensor,
+        bldg:VRF_Outdoor_OutdoorAirTemperature_Sensor .
+
+bldg:VRF_Indoor_1K0V_0 a brick:VRF_Indoor ;
+    brick:feeds bldg:1K0V_HVACZone ;
+    brick:hasPoint bldg:VRF_Indoor_CoolingState_0,
+        bldg:VRF_Indoor_IndoorAirTemperature_Sensor_0 .
+
+bldg:VRF_Indoor_1K0V_1 a brick:VRF_Indoor ;
+    brick:feeds bldg:1K0V_HVACZone ;
+    brick:hasPoint bldg:VRF_Indoor_CoolingState_1,
+        bldg:VRF_Indoor_IndoorAirTemperature_Sensor_1 .
+
+bldg:VRF_Indoor_1K0V_2 a brick:VRF_Indoor ;
+    brick:feeds bldg:1K0V_HVACZone ;
+    brick:hasPoint bldg:VRF_Indoor_CoolingState_2,
+        bldg:VRF_Indoor_IndoorAirTemperature_Sensor_2 .
+
+bldg:VRF_Indoor_1K0V_3 a brick:VRF_Indoor ;
+    brick:feeds bldg:1K0V_HVACZone ;
+    brick:hasPoint bldg:VRF_Indoor_CoolingState_3,
+        bldg:VRF_Indoor_IndoorAirTemperature_Sensor_3 .
+
+bldg:VRF_Indoor_1K0V_4 a brick:VRF_Indoor ;
+    brick:feeds bldg:1K0V_HVACZone ;
+    brick:hasPoint bldg:VRF_Indoor_CoolingState_4,
+        bldg:VRF_Indoor_IndoorAirTemperature_Sensor_4 .
+
+bldg:VRF_Indoor_1K0V_5 a brick:VRF_Indoor ;
+    brick:feeds bldg:1K0V_HVACZone ;
+    brick:hasPoint bldg:VRF_Indoor_CoolingState_5,
+        bldg:VRF_Indoor_IndoorAirTemperature_Sensor_5 .
+
+bldg:VRF_Indoor_1K0V_6 a brick:VRF_Indoor ;
+    brick:feeds bldg:1K0V_HVACZone ;
+    brick:hasPoint bldg:VRF_Indoor_CoolingState_6,
+        bldg:VRF_Indoor_IndoorAirTemperature_Sensor_6 .
+
+bldg:VRF_Indoor_CoolingState_0 a brick:On_Off_Status ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_CoolingState_0_Value .
+
+bldg:VRF_Indoor_CoolingState_0_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"exv1Opening\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/0\"}, \"code_name\": [\"Indoor unit cooling state 0\"]}" .
+
+bldg:VRF_Indoor_CoolingState_1 a brick:On_Off_Status ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_CoolingState_1_Value .
+
+bldg:VRF_Indoor_CoolingState_1_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"exv1Opening\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/1\"}, \"code_name\": [\"Indoor unit cooling state 1\"]}" .
+
+bldg:VRF_Indoor_CoolingState_2 a brick:On_Off_Status ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_CoolingState_2_Value .
+
+bldg:VRF_Indoor_CoolingState_2_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"exv1Opening\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/2\"}, \"code_name\": [\"Indoor unit cooling state 2\"]}" .
+
+bldg:VRF_Indoor_CoolingState_3 a brick:On_Off_Status ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_CoolingState_3_Value .
+
+bldg:VRF_Indoor_CoolingState_3_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"exv1Opening\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/3\"}, \"code_name\": [\"Indoor unit cooling state 3\"]}" .
+
+bldg:VRF_Indoor_CoolingState_4 a brick:On_Off_Status ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_CoolingState_4_Value .
+
+bldg:VRF_Indoor_CoolingState_4_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"exv1Opening\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/4\"}, \"code_name\": [\"Indoor unit cooling state 4\"]}" .
+
+bldg:VRF_Indoor_CoolingState_5 a brick:On_Off_Status ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_CoolingState_5_Value .
+
+bldg:VRF_Indoor_CoolingState_5_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"exv1Opening\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/5\"}, \"code_name\": [\"Indoor unit cooling state 5\"]}" .
+
+bldg:VRF_Indoor_CoolingState_6 a brick:On_Off_Status ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_CoolingState_6_Value .
+
+bldg:VRF_Indoor_CoolingState_6_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"exv1Opening\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/6\"}, \"code_name\": [\"Indoor unit cooling state 6\"]}" .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_0 a brick:Air_Temperature_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_IndoorAirTemperature_Sensor_0_Value .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_0_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"roomTemp\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/0\"}, \"code_name\": [\"Indoor temperature 0\"]}" .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_1 a brick:Air_Temperature_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_IndoorAirTemperature_Sensor_1_Value .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_1_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"roomTemp\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/1\"}, \"code_name\": [\"Indoor temperature 1\"]}" .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_2 a brick:Air_Temperature_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_IndoorAirTemperature_Sensor_2_Value .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_2_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"roomTemp\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/2\"}, \"code_name\": [\"Indoor temperature 2\"]}" .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_3 a brick:Air_Temperature_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_IndoorAirTemperature_Sensor_3_Value .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_3_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"roomTemp\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/3\"}, \"code_name\": [\"Indoor temperature 3\"]}" .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_4 a brick:Air_Temperature_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_IndoorAirTemperature_Sensor_4_Value .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_4_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"roomTemp\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/4\"}, \"code_name\": [\"Indoor temperature 4\"]}" .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_5 a brick:Air_Temperature_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_IndoorAirTemperature_Sensor_5_Value .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_5_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"roomTemp\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/5\"}, \"code_name\": [\"Indoor temperature 5\"]}" .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_6 a brick:Air_Temperature_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Indoor_IndoorAirTemperature_Sensor_6_Value .
+
+bldg:VRF_Indoor_IndoorAirTemperature_Sensor_6_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"roomTemp\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/indoor/6\"}, \"code_name\": [\"Indoor temperature 6\"]}" .
+
+bldg:VRF_Outdoor_CompressorFrequency_Sensor a brick:Frequency_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Outdoor_CompressorFrequency_Sensor_Value .
+
+bldg:VRF_Outdoor_CompressorFrequency_Sensor_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"compressor1Frequency\", \"compressor2Frequency\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/outdoor/129\"}, \"code_name\": [\"Compressor frequency 1\", \"Compressor frequency 2\"]}" .
+
+bldg:VRF_Outdoor_CondensingTemperature_Sensor a brick:Air_Temperature_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Outdoor_CondensingTemperature_Sensor_Value .
+
+bldg:VRF_Outdoor_CondensingTemperature_Sensor_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"highPressureSaturationTemp\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/outdoor/129\"}, \"code_name\": [\"Outdoor unit Condensing temperature\"]}" .
+
+bldg:VRF_Outdoor_Electrical_Meter a brick:Electrical_Meter ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Outdoor_Electrical_Meter_Value .
+
+bldg:VRF_Outdoor_Electrical_Meter_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserveribms\", \"measurement_name\": \"ibmsV2modata\", \"field_list\": [\"E\"], \"tag_dict\": {\"nid\": \"ibmsv2/ibmsv2_5929149262402256896/EMeter/mDev_EMeter_Roof_MDV_10\"}, \"code_name\": [\"Outdoor unit power\"]}" .
+
+bldg:VRF_Outdoor_EvaporatingTemperature_Sensor a brick:Air_Temperature_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Outdoor_EvaporatingTemperature_Sensor_Value .
+
+bldg:VRF_Outdoor_EvaporatingTemperature_Sensor_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"lowPressureSaturationTemp\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/outdoor/129\"}, \"code_name\": [\"Outdoor unit Evaporating temperature\"]}" .
+
+bldg:VRF_Outdoor_FanFrequency_Sensor a brick:Frequency_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Outdoor_FanFrequency_Sensor_Value .
+
+bldg:VRF_Outdoor_FanFrequency_Sensor_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"fan1Frequency\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/outdoor/129\"}, \"code_name\": [\"Outdoor unit fan speed\"]}" .
+
+bldg:VRF_Outdoor_HighPressure_Sensor a brick:Pressure_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Outdoor_HighPressure_Sensor_Value .
+
+bldg:VRF_Outdoor_HighPressure_Sensor_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"highPressure\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/outdoor/129\"}, \"code_name\": [\"Compressor discharge pressure\"]}" .
+
+bldg:VRF_Outdoor_LowPressure_Sensor a brick:Pressure_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Outdoor_LowPressure_Sensor_Value .
+
+bldg:VRF_Outdoor_LowPressure_Sensor_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserver\", \"measurement_name\": \"modata\", \"field_list\": [\"lowPressure\"], \"tag_dict\": {\"nid\": \"vrf/vrf_0000CC311178CCM26232341000271K0V/outdoor/129\"}, \"code_name\": [\"Compressor suction pressure\"]}" .
+
+bldg:VRF_Outdoor_OutdoorAirTemperature_Sensor a brick:Air_Temperature_Sensor ;
+    brick:hasTag tag:MPC_VRF ;
+    brick:timeseries bldg:VRF_Outdoor_OutdoorAirTemperature_Sensor_Value .
+
+bldg:VRF_Outdoor_OutdoorAirTemperature_Sensor_Value a brick:TimeseriesReference ;
+    brick:hasTimeseriesId "{\"database_name\": \"moserveribms\", \"measurement_name\": \"bridgemodata\", \"field_list\": [\"e3\"], \"tag_dict\": {\"nid\": \"ibms/ibms_1564376390869024768/microWeatherStation/20201800\"}, \"code_name\": [\"Outdoor dry bulb temperature\"]}" .
+
+brick:VRF_Outdoor a owl:Class ;
+    rdfs:subClassOf brick:HVAC_Equipment ;
+    brick:hasAssociatedTag tag:Check_Valve,
+        tag:Compressor,
+        tag:Cool,
+        tag:Electronic_Expansion_Valve,
+        tag:Equipment,
+        tag:Fan,
+        tag:Four_way_Valve,
+        tag:Heat,
+        tag:Heat_Exchanger,
+        tag:Hydrofluorocarbon,
+        tag:Point,
+        tag:Pressure,
+        tag:Return,
+        tag:Setpoint,
+        tag:Supply,
+        tag:VRF_Outdoor,
+        tag:sensor .
+
+bldg:1K0V_HVACZone a brick:HVAC_Zone .
+
+brick:VRF_Indoor a owl:Class ;
+    rdfs:subClassOf brick:HVAC_Equipment ;
+    brick:hasAssociatedTag tag:Box,
+        tag:Cool,
+        tag:Electromagnetic_Valve,
+        tag:Electronic_Expansion_Valve,
+        tag:Equipment,
+        tag:Fan,
+        tag:Heat,
+        tag:Heat_Exchanger,
+        tag:Hydrofluorocarbon,
+        tag:Point,
+        tag:Return,
+        tag:Setpoint,
+        tag:Supply,
+        tag:VRF_Indoor,
+        tag:Volume,
+        tag:sensor .
+
